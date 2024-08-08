@@ -1,0 +1,10 @@
+**/.DS_Store
+**/.idea
+
+Input/*
+!Input/.keep
+
+Builds
+cmake-build*
+
+
