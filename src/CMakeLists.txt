@@ -16,13 +16,27 @@ FetchContent_MakeAvailable(cpr)
 include(Sodium)
 
 add_library(licensing
+        INTERFACE)
+
+target_sources(licensing
         INTERFACE
         foleys_License.cpp
         foleys_License.h
-        foleys_SharedObject.h)
+        private/foleys_SharedObject.h
+        private/foleys_SystemInfo.h)
+
+if(APPLE)
+    target_sources(licensing INTERFACE private/foleys_SystemInfo.mm)
+else()
+    target_sources(licensing INTERFACE private/foleys_SystemInfo.cpp)
+endif ()
 
 
 target_link_libraries(licensing
         INTERFACE
         cpr::cpr
         sodium)
+
+target_include_directories(licensing
+        INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR})

@@ -18,8 +18,8 @@ public:
     SharedObject()  = default;
     ~SharedObject() = default;
 
-    ObjectType* operator->() const noexcept { return sharedObject.get(); }
-    ObjectType& operator*() const noexcept { return *sharedObject; }
+    ObjectType* operator->() const { return sharedObject.get(); }
+    ObjectType& operator*() const { return *sharedObject; }
 
 private:
     struct Wrapper
@@ -47,8 +47,8 @@ private:
 
     std::shared_ptr<ObjectType> sharedObject = wrapper().getOrCreate();
 
-    SharedObject& operator= (const SharedObject&)     = delete;
-    SharedObject& operator= (SharedObject&&) noexcept = delete;
+    SharedObject& operator= (const SharedObject&) = delete;
+    SharedObject& operator= (SharedObject&&)      = delete;
 };
 
 }  // namespace foleys
