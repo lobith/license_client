@@ -7,19 +7,22 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+class LicensePanelHolder;
+
 class LicensePanel : public juce::Component
 {
 public:
-    LicensePanel();
+    LicensePanel (LicensePanelHolder& holder);
 
     void paint (juce::Graphics& g) override;
     void resized() override;
 
 private:
-    juce::TextButton demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
-    juce::TextButton activate { TRANS ("Activate"), TRANS ("Request an activation from the server (need to be online)") };
-    juce::TextButton refresh { TRANS ("Refresh"), TRANS ("Check activation status again") };
-    juce::TextButton manage { TRANS ("Manage"), TRANS ("Open the license management website") };
+    LicensePanelHolder& panelHolder;
+    juce::TextButton    demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
+    juce::TextButton    activate { TRANS ("Activate"), TRANS ("Request an activation from the server (need to be online)") };
+    juce::TextButton    refresh { TRANS ("Refresh"), TRANS ("Check activation status again") };
+    juce::TextButton    manage { TRANS ("Manage"), TRANS ("Open the license management website") };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LicensePanel)
 };
@@ -30,6 +33,7 @@ public:
     LicensePanelHolder (juce::Component* parent);
 
     void showLicense();
+    void closePanel();
     void updateLayout (juce::Rectangle<int> bounds);
 
 private:

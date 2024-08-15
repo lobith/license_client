@@ -18,9 +18,15 @@ namespace foleys
 class Licensing
 {
 public:
-    Licensing() = default;
+    Licensing();
 
     void setLocalStorage (const std::filesystem::path& path);
+    void setHardwareUid (std::string_view uid);
+
+    /**
+     * Access the server for a new state
+     */
+    void reload();
 
     /**
      * Check if the machine is activated.
@@ -48,13 +54,20 @@ public:
     int         getAvailableActivations() const;
     int         getTotalActivations() const;
 
+    /**
+     * Tries to get new license data from the server.
+     * @param action an optional action. Allowed values: 'demo' or 'activate'. Anything else just gets the status
+     */
+    void fetchLicenseData (std::string_view action = {});
+    void loadLicenseBlob();
+
+    bool lastCheckExpired() const;
 
     using Ptr = SharedObject<Licensing>;
 
 private:
-    void loadLicenseBlob();
-
     std::filesystem::path localStorage;
+    std::string           hardwareUid;
     std::atomic<bool>     activatedFlag;
 };
 

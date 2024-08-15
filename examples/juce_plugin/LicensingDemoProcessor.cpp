@@ -5,6 +5,15 @@
 #include "LicensingDemoProcessor.h"
 #include "LicensingDemoEditor.h"
 
+LicensingDemoProcessor::LicensingDemoProcessor()
+{
+    // TODO: do this in the module itself
+    licensing->setHardwareUid (juce::SystemStats::getUniqueDeviceID().toRawUTF8());
+
+    auto licFile = juce::File::getSpecialLocation (juce::File::commonApplicationDataDirectory).getChildFile ("Manufacturer").getChildFile ("LicensingDemoPlugin.lic");
+    licensing->setLocalStorage (licFile.getFullPathName().toRawUTF8());
+}
+
 
 void LicensingDemoProcessor::prepareToPlay (double sampleRate, int expectedNumSamples) { }
 

@@ -13,6 +13,11 @@ FetchContent_Declare(cpr
         GIT_SHALLOW ON)
 FetchContent_MakeAvailable(cpr)
 
+FetchContent_Declare(nlohmann
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_SHALLOW ON)
+FetchContent_MakeAvailable(nlohmann)
+
 include(Sodium)
 
 add_library(licensing
@@ -39,4 +44,5 @@ target_link_libraries(licensing
 
 target_include_directories(licensing
         INTERFACE
+        ${nlohmann_SOURCE_DIR}/include
         ${CMAKE_CURRENT_LIST_DIR})

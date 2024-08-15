@@ -4,13 +4,27 @@
 
 #include "LicensePanel.h"
 
+#include <foleys_License.h>
 
-LicensePanel::LicensePanel()
+
+LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 {
     addAndMakeVisible (demo);
     addAndMakeVisible (activate);
     addAndMakeVisible (refresh);
     addAndMakeVisible (manage);
+
+    refresh.onClick = [this]
+    {
+        foleys::Licensing::Ptr licensing;
+        licensing->reload();
+    };
+
+    activate.onClick = [this]
+    {
+        // TODO: check if close is allowed
+        panelHolder.closePanel();
+    };
 }
 
 void LicensePanel::paint (juce::Graphics& g)
@@ -43,10 +57,15 @@ void LicensePanelHolder::showLicense()
     if (!parentComponent)
         return;
 
-    panel = std::make_unique<LicensePanel>();
+    panel = std::make_unique<LicensePanel> (*this);
     parentComponent->addAndMakeVisible (panel.get());
 
     parentComponent->resized();
+}
+
+void LicensePanelHolder::closePanel()
+{
+    panel.reset();
 }
 
 void LicensePanelHolder::updateLayout (juce::Rectangle<int> bounds)

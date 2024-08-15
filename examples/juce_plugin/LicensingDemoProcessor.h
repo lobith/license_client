@@ -13,7 +13,7 @@
 class LicensingDemoProcessor : public juce::AudioProcessor
 {
 public:
-    LicensingDemoProcessor() = default;
+    LicensingDemoProcessor();
 
     const juce::String getName() const override { return "Licensing Demo Plugin"; }
 

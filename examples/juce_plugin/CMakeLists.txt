@@ -28,7 +28,8 @@ target_sources(FoleysJuceLicenseExample
         LicensingDemoEditor.cpp
         LicensingDemoEditor.h
         LicensePanel.cpp
-        LicensePanel.h)
+        LicensePanel.h
+        LicenseData.cpp)
 
 target_compile_definitions(FoleysJuceLicenseExample
         PRIVATE
