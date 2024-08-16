@@ -8,7 +8,18 @@
 
 LicensingDemoEditor::LicensingDemoEditor (LicensingDemoProcessor& p) : juce::AudioProcessorEditor (&p), processor (p)
 {
-    juce::Timer::callAfterDelay (1000, [this] { licensingPanel.showLicense(); });
+    juce::Component::SafePointer<LicensingDemoEditor> safePointer (this);
+    juce::Timer::callAfterDelay (5000,
+                                 [safePointer, this]
+                                 {
+                                     if (!safePointer)
+                                         return;
+
+                                     foleys::Licensing::Ptr licensing;
+                                     if (!licensing->activated())
+                                         licensingPanel.showLicense();
+                                 });
+
     setSize (640, 480);
 }
 

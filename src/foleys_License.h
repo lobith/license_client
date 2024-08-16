@@ -26,6 +26,11 @@ public:
     /**
      * Access the server for a new state
      */
+    void syncLicense();
+
+    /**
+     * Load the state from disk and if necessary fetch a new license
+     */
     void reload();
 
     /**
@@ -34,7 +39,7 @@ public:
      *
      * @return true if this machine is checked and activated.
      */
-    bool activated() const;
+    [[nodiscard]] bool activated() const;
 
     /**
      * Check if the machine is expired (according to server time)
@@ -42,7 +47,7 @@ public:
      *
      * @return true if the expiry date is in the past.
      */
-    bool expired() const;
+    [[nodiscard]] bool expired() const;
 
     /**
      * This returns the expiry time/date or nullopt if it is a perpetual license.
@@ -53,6 +58,20 @@ public:
     std::string getLicenseeEmail() const;
     int         getAvailableActivations() const;
     int         getTotalActivations() const;
+
+    /**
+     * Request the server to activate this computer
+     */
+    void activate();
+
+    [[nodiscard]] bool canDemo();
+    [[nodiscard]] bool isDemo();
+    [[nodiscard]] int  demoDaysLeft();
+
+    /**
+     * Send a demo request to the server
+     */
+    void startDemo();
 
     /**
      * Tries to get new license data from the server.
@@ -66,9 +85,14 @@ public:
     using Ptr = SharedObject<Licensing>;
 
 private:
+    [[nodiscard]] bool processData (std::string_view data);
+
     std::filesystem::path localStorage;
     std::string           hardwareUid;
     std::atomic<bool>     activatedFlag;
+    std::atomic<bool>     demoAvailable;
+    std::atomic<int>      demoDays;
+    time_t                checked;
 };
 
 

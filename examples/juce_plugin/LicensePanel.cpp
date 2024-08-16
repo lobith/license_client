@@ -9,6 +9,8 @@
 
 LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 {
+    foleys::Licensing::Ptr licensing;
+
     addAndMakeVisible (demo);
     addAndMakeVisible (activate);
     addAndMakeVisible (refresh);
@@ -17,7 +19,14 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
     refresh.onClick = [this]
     {
         foleys::Licensing::Ptr licensing;
-        licensing->reload();
+        licensing->syncLicense();
+    };
+
+    demo.setEnabled (licensing->canDemo());
+    demo.onClick = [this]
+    {
+        foleys::Licensing::Ptr licensing;
+        licensing->startDemo();
     };
 
     activate.onClick = [this]
@@ -30,6 +39,13 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 void LicensePanel::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black.withAlpha (0.8f));
+
+    foleys::Licensing::Ptr licensing;
+    if (licensing->isDemo())
+    {
+        g.setColour (juce::Colours::silver);
+        g.drawFittedText ("Your demo will expire in " + juce::String (licensing->demoDaysLeft()) + " days", getLocalBounds(), juce::Justification::centred, 1);
+    }
 }
 
 void LicensePanel::resized()

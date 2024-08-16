@@ -10,10 +10,15 @@ LicensingDemoProcessor::LicensingDemoProcessor()
     // TODO: do this in the module itself
     licensing->setHardwareUid (juce::SystemStats::getUniqueDeviceID().toRawUTF8());
 
-    auto licFile = juce::File::getSpecialLocation (juce::File::commonApplicationDataDirectory).getChildFile ("Manufacturer").getChildFile ("LicensingDemoPlugin.lic");
-    licensing->setLocalStorage (licFile.getFullPathName().toRawUTF8());
-}
 
+    auto appFolder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory);
+#if JUCE_MAC
+    appFolder = appFolder.getChildFile("Application Support");
+#endif
+    auto licFile = appFolder.getChildFile ("Manufacturer").getChildFile ("LicensingDemoPlugin.lic");
+    licensing->setLocalStorage (licFile.getFullPathName().toRawUTF8());
+    licensing->reload();
+}
 
 void LicensingDemoProcessor::prepareToPlay (double sampleRate, int expectedNumSamples) { }
 
