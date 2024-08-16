@@ -92,7 +92,7 @@ private:
     std::atomic<bool>     activatedFlag;
     std::atomic<bool>     demoAvailable;
     std::atomic<int>      demoDays;
-    time_t                checked;
+    std::time_t           checked;
 };
 
 

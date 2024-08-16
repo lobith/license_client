@@ -129,6 +129,12 @@ bool Licensing::processData (std::string_view data)
     demoAvailable = response["demo_available"];
     demoDays      = response["demo_days"];
 
+    struct std::tm tm;
+    std::string checked_string = response["checked"];
+    std::istringstream ss(checked_string);
+    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+    checked = std::mktime(&tm);
+
     return true;
 }
 
@@ -143,7 +149,8 @@ void Licensing::loadLicenseBlob()
 
 bool Licensing::lastCheckExpired() const
 {
-    return true;
+    auto seconds = std::difftime(std::time(nullptr), checked);
+    return seconds > 3600 * 24;
 }
 
 
