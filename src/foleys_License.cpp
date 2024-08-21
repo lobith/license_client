@@ -122,18 +122,28 @@ void Licensing::fetchLicenseData (std::string_view action)
 
 bool Licensing::processData (std::string_view data)
 {
+    const auto convert_time = [] (const std::string& timeString, const char* formatString)
+    {
+        struct std::tm tm{};
+        std::istringstream ss (timeString);
+        ss >> std::get_time (&tm, formatString);
+        return std::mktime (&tm);
+    };
+
     auto response = nlohmann::json::parse (data, nullptr, false);
     if (response.is_discarded())
         return false;
 
+    checked = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
+
     demoAvailable = response["demo_available"];
     demoDays      = response["demo_days"];
-
-    struct std::tm tm;
-    std::string checked_string = response["checked"];
-    std::istringstream ss(checked_string);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-    checked = std::mktime(&tm);
+    if (response.contains ("demo_ends"))
+    {
+        auto ends          = convert_time (response["demo_ends"], "%Y-%m-%d");
+        auto localDemoDays = static_cast<int>(1 + difftime (ends, std::time (nullptr)) / (24 * 3600));
+        demoDays = std::min (demoDays.load(), localDemoDays);
+    }
 
     return true;
 }
@@ -149,7 +159,7 @@ void Licensing::loadLicenseBlob()
 
 bool Licensing::lastCheckExpired() const
 {
-    auto seconds = std::difftime(std::time(nullptr), checked);
+    auto seconds = std::difftime (std::time (nullptr), checked);
     return seconds > 3600 * 24;
 }
 
