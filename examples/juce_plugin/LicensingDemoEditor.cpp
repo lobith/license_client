@@ -6,9 +6,16 @@
 #include "LicensingDemoProcessor.h"
 
 
-LicensingDemoEditor::LicensingDemoEditor (LicensingDemoProcessor& p) : juce::AudioProcessorEditor (&p), processor (p)
+LicensingDemoEditor::LicensingDemoEditor (LicensingDemoProcessor& p) : juce::AudioProcessorEditor (&p), audioProcessor (p)
 {
     juce::Component::SafePointer<LicensingDemoEditor> safePointer (this);
+
+    addAndMakeVisible(aboutButton);
+    aboutButton.onClick = [this]
+    {
+        licensingPanel.showLicense();
+    };
+
     juce::Timer::callAfterDelay (5000,
                                  [safePointer, this]
                                  {
@@ -16,7 +23,7 @@ LicensingDemoEditor::LicensingDemoEditor (LicensingDemoProcessor& p) : juce::Aud
                                          return;
 
                                      foleys::Licensing::Ptr licensing;
-                                     if (!licensing->activated())
+                                     if (!licensing->activated() || licensing->expired())
                                          licensingPanel.showLicense();
                                  });
 
@@ -33,5 +40,6 @@ void LicensingDemoEditor::paint (juce::Graphics& g)
 
 void LicensingDemoEditor::resized()
 {
+    aboutButton.setBounds(getWidth() - 80, 0, 80, 20);
     licensingPanel.updateLayout (getLocalBounds());
 }

@@ -13,16 +13,16 @@ LicensingDemoProcessor::LicensingDemoProcessor()
 
     auto appFolder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory);
 #if JUCE_MAC
-    appFolder = appFolder.getChildFile("Application Support");
+    appFolder = appFolder.getChildFile ("Application Support");
 #endif
     auto licFile = appFolder.getChildFile ("Manufacturer").getChildFile ("LicensingDemoPlugin.lic");
     licensing->setLocalStorage (licFile.getFullPathName().toRawUTF8());
     licensing->reload();
 }
 
-void LicensingDemoProcessor::prepareToPlay (double sampleRate, int expectedNumSamples) { }
+void LicensingDemoProcessor::prepareToPlay ([[maybe_unused]] double sampleRate, [[maybe_unused]] int expectedNumSamples) { }
 
-void LicensingDemoProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+void LicensingDemoProcessor::processBlock (juce::AudioBuffer<float>& buffer, [[maybe_unused]] juce::MidiBuffer& midi)
 {
     if (!licensing->activated())
     {

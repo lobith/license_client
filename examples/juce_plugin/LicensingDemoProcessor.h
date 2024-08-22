@@ -42,7 +42,7 @@ public:
     double             getTailLengthSeconds() const override { return 0.0; }
     int                getNumPrograms() override { return 1; }
     int                getCurrentProgram() override { return 0; }
-    const juce::String getProgramName (int index) override { return "default"; }
+    const juce::String getProgramName ([[maybe_unused]] int index) override { return "default"; }
     void               setCurrentProgram ([[maybe_unused]] int index) override { }
     void               changeProgramName ([[maybe_unused]] int index, [[maybe_unused]] const juce::String& newName) override { }
 

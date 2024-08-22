@@ -43,7 +43,7 @@ private:
     {
         static Wrapper wrapper;
         return wrapper;
-    };
+    }
 
     std::shared_ptr<ObjectType> sharedObject = wrapper().getOrCreate();
 

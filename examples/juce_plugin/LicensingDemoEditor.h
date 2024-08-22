@@ -22,8 +22,9 @@ public:
     void resized() override;
 
 private:
-    LicensingDemoProcessor& processor;
+    LicensingDemoProcessor& audioProcessor;
     LicensePanelHolder      licensingPanel { this };
+    juce::TextButton        aboutButton { "About", "Show the about panel" };
 };
 
 #endif  // FOLEYS_LICENSING_CLIENT_LICENSINGDEMOEDITOR_H

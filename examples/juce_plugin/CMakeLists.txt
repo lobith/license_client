@@ -28,7 +28,10 @@ target_sources(FoleysJuceLicenseExample
         LicensingDemoEditor.cpp
         LicensingDemoEditor.h
         LicensePanel.cpp
-        LicensePanel.h
+        LicensePanel.h)
+
+target_sources(licensing
+        INTERFACE
         LicenseData.cpp)
 
 target_compile_definitions(FoleysJuceLicenseExample
@@ -43,4 +46,5 @@ target_link_libraries(FoleysJuceLicenseExample
         licensing
         juce::juce_audio_processors
         juce::juce_audio_devices
-        juce::juce_audio_utils)
+        juce::juce_audio_utils
+        juce::juce_recommended_warning_flags)

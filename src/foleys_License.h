@@ -34,6 +34,12 @@ public:
     void reload();
 
     /**
+     * If the last action resulted in an error, this will return it
+     * @return the error as string
+     */
+    std::string getLastError() const;
+
+    /**
      * Check if the machine is activated.
      * This value is cached to be fast and thread safe, but less secure.
      *
@@ -50,23 +56,31 @@ public:
     [[nodiscard]] bool expired() const;
 
     /**
+     * This is a shorthand that either a license that is not expired or a demo is running
+     * @return true if is allowed to run
+     */
+    [[nodiscard]] bool isAllowed() const;
+
+    /**
      * This returns the expiry time/date or nullopt if it is a perpetual license.
      * @return The expiry date
      */
     std::optional<std::time_t> expires() const;
 
+    /**
+     * When activated this can be used to display the licensee
+     * @return the email the license is licensed to
+     */
     std::string getLicenseeEmail() const;
-    int         getAvailableActivations() const;
-    int         getTotalActivations() const;
 
     /**
      * Request the server to activate this computer
      */
-    void activate();
+    void activate (std::initializer_list<std::pair<std::string, std::string>> data);
 
-    [[nodiscard]] bool canDemo();
-    [[nodiscard]] bool isDemo();
-    [[nodiscard]] int  demoDaysLeft();
+    [[nodiscard]] bool canDemo() const;
+    [[nodiscard]] bool isDemo() const;
+    [[nodiscard]] int  demoDaysLeft() const;
 
     /**
      * Send a demo request to the server
@@ -77,7 +91,7 @@ public:
      * Tries to get new license data from the server.
      * @param action an optional action. Allowed values: 'demo' or 'activate'. Anything else just gets the status
      */
-    void fetchLicenseData (std::string_view action = {});
+    void fetchLicenseData (std::string_view action = {}, std::initializer_list<std::pair<std::string, std::string>> data = {});
     void loadLicenseBlob();
 
     bool lastCheckExpired() const;
@@ -87,15 +101,18 @@ public:
 private:
     [[nodiscard]] bool processData (std::string_view data);
 
-    std::filesystem::path localStorage;
-    std::string           hardwareUid;
-    std::atomic<bool>     activatedFlag;
-    std::atomic<bool>     demoAvailable;
-    std::atomic<int>      demoDays;
-    std::time_t           checked;
+    std::filesystem::path      localStorage;
+    std::string                hardwareUid;
+    std::string                email;
+    std::string                lastError;
+    std::atomic<bool>          activatedFlag = false;
+    std::atomic<bool>          demoAvailable = false;
+    std::atomic<int>           demoDays      = 0;
+    std::optional<std::time_t> expiryDate;
+    std::time_t                checked = {};
 };
 
 
-};  // namespace foleys
+}  // namespace foleys
 
 #endif  // FOLEYS_LICENSE_CLIENT_FOLEYS_LICENSE_H

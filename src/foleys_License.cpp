@@ -14,7 +14,7 @@
 namespace foleys
 {
 
-Licensing::Licensing() { }
+Licensing::Licensing() = default;
 
 void Licensing::reload()
 {
@@ -29,7 +29,6 @@ void Licensing::syncLicense()
     fetchLicenseData();
 }
 
-
 bool Licensing::activated() const
 {
     return activatedFlag.load();
@@ -37,45 +36,48 @@ bool Licensing::activated() const
 
 bool Licensing::expired() const
 {
+    if (expiryDate)
+        return *expiryDate < std::time (nullptr);
+
     return false;
+}
+
+bool Licensing::isAllowed() const
+{
+      return (activated() && !expired()) || isDemo();
+}
+
+std::string Licensing::getLastError() const
+{
+    return lastError;
 }
 
 std::optional<std::time_t> Licensing::expires() const
 {
-    return {};
+    return expiryDate;
 }
 
 std::string Licensing::getLicenseeEmail() const
 {
-    return "unknown";
+    return email;
 }
 
-int Licensing::getAvailableActivations() const
+void Licensing::activate (std::initializer_list<std::pair<std::string, std::string>> data)
 {
-    return 0;
+    fetchLicenseData ("activate", data);
 }
 
-int Licensing::getTotalActivations() const
-{
-    return 0;
-}
-
-void Licensing::activate()
-{
-    fetchLicenseData ("activate");
-}
-
-bool Licensing::canDemo()
+bool Licensing::canDemo() const
 {
     return demoAvailable;
 }
 
-bool Licensing::isDemo()
+bool Licensing::isDemo() const
 {
     return !demoAvailable && demoDays > 0;
 }
 
-int Licensing::demoDaysLeft()
+int Licensing::demoDaysLeft() const
 {
     return demoDays;
 }
@@ -90,9 +92,7 @@ void Licensing::setLocalStorage (const std::filesystem::path& path)
 {
     localStorage = path;
     if (std::filesystem::exists (localStorage))
-    {
         loadLicenseBlob();
-    }
 }
 
 void Licensing::setHardwareUid (std::string_view uid)
@@ -102,13 +102,16 @@ void Licensing::setHardwareUid (std::string_view uid)
 
 // ================================================================================
 
-void Licensing::fetchLicenseData (std::string_view action)
+void Licensing::fetchLicenseData (std::string_view action, std::initializer_list<std::pair<std::string, std::string>> data)
 {
     nlohmann::json request;
     request["product"]  = LicenseData::productUid;
     request["hardware"] = hardwareUid;
     if (!action.empty())
         request["action"] = action;
+
+    for (const auto& pair: data)
+        request[pair.first] = pair.second;
 
     cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl), cpr::Body (request.dump()));
 
@@ -124,7 +127,7 @@ bool Licensing::processData (std::string_view data)
 {
     const auto convert_time = [] (const std::string& timeString, const char* formatString)
     {
-        struct std::tm tm{};
+        std::tm            tm {};
         std::istringstream ss (timeString);
         ss >> std::get_time (&tm, formatString);
         return std::mktime (&tm);
@@ -132,18 +135,41 @@ bool Licensing::processData (std::string_view data)
 
     auto response = nlohmann::json::parse (data, nullptr, false);
     if (response.is_discarded())
-        return false;
-
-    checked = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
-
-    demoAvailable = response["demo_available"];
-    demoDays      = response["demo_days"];
-    if (response.contains ("demo_ends"))
     {
-        auto ends          = convert_time (response["demo_ends"], "%Y-%m-%d");
-        auto localDemoDays = static_cast<int>(1 + difftime (ends, std::time (nullptr)) / (24 * 3600));
-        demoDays = std::min (demoDays.load(), localDemoDays);
+        lastError = "Got invalid license data";
+        return false;
     }
+
+    checked       = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
+    activatedFlag = response["activated"];
+    email = response.contains("licensee_email") ? response["licensee_email"] : "";
+
+    if (response.contains ("license_expires"))
+        expiryDate = convert_time (response["license_expires"], "%Y-%m-%d");
+    else
+        expiryDate = std::nullopt;
+
+    if (response.contains ("demo_available"))
+    {
+        demoAvailable = response["demo_available"];
+        demoDays      = response["demo_days"];
+        if (response.contains ("demo_ends"))
+        {
+            auto ends          = convert_time (response["demo_ends"], "%Y-%m-%d");
+            auto localDemoDays = static_cast<int> (1 + difftime (ends, std::time (nullptr)) / (24 * 3600));
+            demoDays           = std::min (demoDays.load(), localDemoDays);
+        }
+    }
+    else
+    {
+        demoAvailable = false;
+        demoDays      = 0;
+    }
+
+    if (response.contains ("error"))
+        lastError = response["error"];
+    else
+        lastError.clear();
 
     return true;
 }

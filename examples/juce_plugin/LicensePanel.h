@@ -17,8 +17,13 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
+    void update();
+
 private:
     LicensePanelHolder& panelHolder;
+    juce::TextEditor    email;
+    juce::Label         status;
+    juce::TextButton    closeButton { TRANS ("Close"), TRANS ("Close panel") };
     juce::TextButton    demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
     juce::TextButton    activate { TRANS ("Activate"), TRANS ("Request an activation from the server (need to be online)") };
     juce::TextButton    refresh { TRANS ("Refresh"), TRANS ("Check activation status again") };
