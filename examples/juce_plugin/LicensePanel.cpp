@@ -10,6 +10,8 @@
 
 LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 {
+    foleys::Licensing::Ptr()->syncLicense();
+
     addAndMakeVisible (email);
     addAndMakeVisible (status);
     addAndMakeVisible (closeButton);
@@ -22,22 +24,13 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 
     closeButton.onClick = [this]
     {
-        foleys::Licensing::Ptr licensing;
-        if (licensing->isAllowed())
+        if (foleys::Licensing::Ptr()->isAllowed())
             panelHolder.closePanel();
     };
 
-    refresh.onClick = []
-    {
-        foleys::Licensing::Ptr licensing;
-        licensing->syncLicense();
-    };
+    refresh.onClick = [] { foleys::Licensing::Ptr()->syncLicense(); };
 
-    demo.onClick = []
-    {
-        foleys::Licensing::Ptr licensing;
-        licensing->startDemo();
-    };
+    demo.onClick = [] { foleys::Licensing::Ptr()->startDemo(); };
 
     activate.onClick = [this]
     {
@@ -48,7 +41,9 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
         }
 
         foleys::Licensing::Ptr licensing;
-        licensing->activate ({ { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
+        licensing->activate ({ { "computer", juce::SystemStats::getComputerName().toRawUTF8() },
+                               { "user", juce::SystemStats::getFullUserName().toRawUTF8() },
+                               { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
                                { "host", juce::PluginHostType().getHostDescription() },
                                { "email", email.getText().toLowerCase().toRawUTF8() } });
     };
