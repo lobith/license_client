@@ -92,7 +92,6 @@ void Licensing::startDemo()
     fetchLicenseData ("demo");
 }
 
-
 void Licensing::setLocalStorage (const std::filesystem::path& path)
 {
     localStorage = path;
@@ -125,6 +124,8 @@ void Licensing::fetchLicenseData (std::string_view action, std::initializer_list
         std::filesystem::create_directories (localStorage.parent_path());
         std::ofstream output (localStorage);
         output << r.text;
+
+        observerList.call ([] (auto& l) { l.licenseFetched(); });
     }
 }
 
@@ -186,12 +187,24 @@ void Licensing::loadLicenseBlob()
 
     if (!processData (text))
         fetchLicenseData();
+    else
+        observerList.call ([] (auto& l) { l.licenseLoaded(); });
 }
 
 bool Licensing::lastCheckExpired() const
 {
     auto seconds = std::difftime (std::time (nullptr), checked);
     return seconds > 3600 * 24;
+}
+
+void Licensing::addObserver(Observer* observer)
+{
+    observerList.addObserver(observer);
+}
+
+void Licensing::removeObserver(Observer* observer)
+{
+    observerList.removeObserver(observer);
 }
 
 

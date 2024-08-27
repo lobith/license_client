@@ -50,7 +50,14 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
 
     manage.onClick = [this] { foleys::Licensing::Ptr()->login (email.getText().toRawUTF8()); };
 
+    foleys::Licensing::Ptr()->addObserver (this);
+
     update();
+}
+
+LicensePanel::~LicensePanel()
+{
+    foleys::Licensing::Ptr()->removeObserver (this);
 }
 
 void LicensePanel::update()

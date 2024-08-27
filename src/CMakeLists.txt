@@ -28,6 +28,7 @@ target_sources(licensing
         foleys_License.cpp
         foleys_License.h
         private/foleys_SharedObject.h
+        private/foleys_Observers.h
         private/foleys_SystemInfo.h)
 
 if(APPLE)

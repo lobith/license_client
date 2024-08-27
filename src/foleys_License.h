@@ -6,6 +6,7 @@
 #define FOLEYS_LICENSE_CLIENT_FOLEYS_LICENSE_H
 
 #include "private/foleys_SharedObject.h"
+#include "private/foleys_Observers.h"
 
 #include <atomic>
 #include <optional>
@@ -103,6 +104,25 @@ public:
 
     using Ptr = SharedObject<Licensing>;
 
+    struct Observer
+    {
+        virtual ~Observer()           = default;
+        virtual void licenseLoaded()  = 0;
+        virtual void licenseFetched() = 0;
+    };
+
+    /**
+     * Register an observer when a new license answer is received or loaded. Make sure to removeObserver before you destroy the observer.
+     * @param observer
+     */
+    void addObserver (Observer* observer);
+
+    /**
+     * Deregister an observer
+     * @param observer
+     */
+    void removeObserver (Observer* observer);
+
 private:
     [[nodiscard]] bool processData (std::string_view data);
 
@@ -115,6 +135,7 @@ private:
     std::atomic<int>           demoDays      = 0;
     std::optional<std::time_t> expiryDate;
     std::time_t                checked = {};
+    ObserverList<Observer>     observerList;
 };
 
 

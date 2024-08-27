@@ -6,18 +6,25 @@
 #define FOLEYS_LICENSING_CLIENT_LICENSEPANEL_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <foleys_License.h>
 
 class LicensePanelHolder;
 
-class LicensePanel : public juce::Component
+class LicensePanel
+  : public juce::Component
+  , public foleys::Licensing::Observer
 {
 public:
-    LicensePanel (LicensePanelHolder& holder);
+    explicit LicensePanel (LicensePanelHolder& holder);
+    ~LicensePanel() override;
 
     void paint (juce::Graphics& g) override;
     void resized() override;
 
     void update();
+
+    void licenseLoaded() override { update(); }
+    void licenseFetched() override { update(); }
 
 private:
     LicensePanelHolder& panelHolder;
@@ -35,7 +42,7 @@ private:
 class LicensePanelHolder
 {
 public:
-    LicensePanelHolder (juce::Component* parent);
+    explicit LicensePanelHolder (juce::Component* parent);
 
     void showLicense();
     void closePanel();
