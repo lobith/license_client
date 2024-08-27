@@ -48,6 +48,8 @@ LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
                                { "email", email.getText().toLowerCase().toRawUTF8() } });
     };
 
+    manage.onClick = [this] { foleys::Licensing::Ptr()->login (email.getText().toRawUTF8()); };
+
     update();
 }
 

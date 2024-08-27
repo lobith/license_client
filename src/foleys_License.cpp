@@ -44,7 +44,7 @@ bool Licensing::expired() const
 
 bool Licensing::isAllowed() const
 {
-      return (activated() && !expired()) || isDemo();
+    return (activated() && !expired()) || isDemo();
 }
 
 std::string Licensing::getLastError() const
@@ -60,6 +60,11 @@ std::optional<std::time_t> Licensing::expires() const
 std::string Licensing::getLicenseeEmail() const
 {
     return email;
+}
+
+void Licensing::login (const std::string& login_email)
+{
+    fetchLicenseData ("login", { { "login_email", login_email } });
 }
 
 void Licensing::activate (std::initializer_list<std::pair<std::string, std::string>> data)
@@ -142,7 +147,7 @@ bool Licensing::processData (std::string_view data)
 
     checked       = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
     activatedFlag = response["activated"];
-    email = response.contains("licensee_email") ? response["licensee_email"] : "";
+    email         = response.contains ("licensee_email") ? response["licensee_email"] : "";
 
     if (response.contains ("license_expires"))
         expiryDate = convert_time (response["license_expires"], "%Y-%m-%d");

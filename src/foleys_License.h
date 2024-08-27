@@ -74,6 +74,11 @@ public:
     std::string getLicenseeEmail() const;
 
     /**
+     * Send a login request. The server will send a login link
+     */
+    void login (const std::string& email);
+
+    /**
      * Request the server to activate this computer
      */
     void activate (std::initializer_list<std::pair<std::string, std::string>> data);
