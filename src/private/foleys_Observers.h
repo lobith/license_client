@@ -19,7 +19,7 @@ public:
 
     void addObserver (ObserverType* observer)
     {
-        std::lock_guard<std::mutex> guard (observerLock);
+        std::scoped_lock<std::mutex> guard (observerLock);
         if (std::find (observers.begin(), observers.end(), observer) != observers.cend())
             return;
 
@@ -28,13 +28,13 @@ public:
 
     void removeObserver (ObserverType* observer)
     {
-        std::lock_guard<std::mutex> guard (observerLock);
+        std::scoped_lock<std::mutex> guard (observerLock);
         observers.erase (std::remove_if (observers.begin(), observers.end(), [&observer] (const ObserverType* o) { return &o == &observer; }), observers.end());
     }
 
     void call (std::function<void (ObserverType&)> func)
     {
-        std::lock_guard<std::mutex> guard (observerLock);
+        std::scoped_lock<std::mutex> guard (observerLock);
         for (auto* o: observers)
             func (*o);
     }

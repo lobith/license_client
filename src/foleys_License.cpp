@@ -59,6 +59,7 @@ std::optional<std::time_t> Licensing::expires() const
 
 std::string Licensing::getLicenseeEmail() const
 {
+    std::scoped_lock guard(processingLock);
     return email;
 }
 
@@ -131,6 +132,8 @@ void Licensing::fetchLicenseData (std::string_view action, std::initializer_list
 
 bool Licensing::processData (std::string_view data)
 {
+    std::scoped_lock guard (processingLock);
+
     const auto convert_time = [] (const std::string& timeString, const char* formatString)
     {
         std::tm            tm {};
@@ -197,14 +200,14 @@ bool Licensing::lastCheckExpired() const
     return seconds > 3600 * 24;
 }
 
-void Licensing::addObserver(Observer* observer)
+void Licensing::addObserver (Observer* observer)
 {
-    observerList.addObserver(observer);
+    observerList.addObserver (observer);
 }
 
-void Licensing::removeObserver(Observer* observer)
+void Licensing::removeObserver (Observer* observer)
 {
-    observerList.removeObserver(observer);
+    observerList.removeObserver (observer);
 }
 
 

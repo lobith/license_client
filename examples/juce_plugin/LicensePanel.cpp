@@ -67,23 +67,24 @@ void LicensePanel::update()
 
     closeButton.setVisible (licensing->isAllowed());
 
-    if (!licensing->getLastError().empty())
-        status.setText (licensing->getLastError(), juce::sendNotification);
+    juce::String lastError (licensing->getLastError());
+    if (lastError.isNotEmpty())
+        status.setText (lastError, juce::dontSendNotification);
     else if (licensing->expired())
     {
         char dateString[64];
         auto expiryDate = *licensing->expires();
         std::strftime (dateString, 64, "%d. %m %Y", std::localtime (&expiryDate));
-        status.setText ("Your license expired on " + juce::String (dateString), juce::sendNotification);
+        status.setText ("Your license expired on " + juce::String (dateString), juce::dontSendNotification);
     }
     else if (licensing->activated())
         status.setText ("Plugin activated to " + licensing->getLicenseeEmail(), juce::sendNotification);
     else if (licensing->isDemo())
-        status.setText ("Your demo will expire in " + juce::String (licensing->demoDaysLeft()) + " days", juce::sendNotification);
+        status.setText ("Your demo will expire in " + juce::String (licensing->demoDaysLeft()) + " days", juce::dontSendNotification);
     else if (licensing->canDemo())
-        status.setText ("Hit the Demo button to start your free " + juce::String (licensing->demoDaysLeft()) + " days trial", juce::sendNotification);
+        status.setText ("Hit the Demo button to start your free " + juce::String (licensing->demoDaysLeft()) + " days trial", juce::dontSendNotification);
     else
-        status.setText ("If you bought a license enter your email and hit Activate", juce::sendNotification);
+        status.setText ("If you bought a license enter your email and hit Activate", juce::dontSendNotification);
 }
 
 void LicensePanel::paint (juce::Graphics& g)

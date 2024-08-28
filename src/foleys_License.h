@@ -126,6 +126,7 @@ public:
 private:
     [[nodiscard]] bool processData (std::string_view data);
 
+    mutable std::mutex         processingLock;
     std::filesystem::path      localStorage;
     std::string                hardwareUid;
     std::string                email;
