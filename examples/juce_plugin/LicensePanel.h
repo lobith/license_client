@@ -23,8 +23,16 @@ public:
 
     void update();
 
-    void licenseLoaded() override { update(); }
-    void licenseFetched() override { update(); }
+    void licenseLoaded() override
+    {
+        JUCE_ASSERT_MESSAGE_THREAD
+        update();
+    }
+    void licenseFetched() override
+    {
+        JUCE_ASSERT_MESSAGE_THREAD
+        update();
+    }
 
 private:
     LicensePanelHolder& panelHolder;

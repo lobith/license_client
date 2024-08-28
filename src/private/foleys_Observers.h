@@ -29,7 +29,7 @@ public:
     void removeObserver (ObserverType* observer)
     {
         std::scoped_lock<std::mutex> guard (observerLock);
-        observers.erase (std::remove_if (observers.begin(), observers.end(), [&observer] (const ObserverType* o) { return &o == &observer; }), observers.end());
+        observers.erase (std::remove_if (observers.begin(), observers.end(), [observer] (const ObserverType* o) { return o == observer; }), observers.end());
     }
 
     void call (std::function<void (ObserverType&)> func)
