@@ -6,8 +6,10 @@
 
 #include "private/foleys_LicenseData.h"
 
+#include <private/choc_Base64.h>
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
+#include <sodium.h>
 
 #include <iostream>
 
@@ -59,7 +61,7 @@ std::optional<std::time_t> Licensing::expires() const
 
 std::string Licensing::getLicenseeEmail() const
 {
-    std::scoped_lock guard(processingLock);
+    std::scoped_lock guard (processingLock);
     return email;
 }
 
@@ -118,7 +120,7 @@ void Licensing::fetchLicenseData (std::string_view action, std::initializer_list
     for (const auto& pair: data)
         request[pair.first] = pair.second;
 
-    cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl), cpr::Body (request.dump()));
+    cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/", cpr::Body (request.dump()));
 
     if (processData (r.text))
     {
@@ -142,10 +144,25 @@ bool Licensing::processData (std::string_view data)
         return std::mktime (&tm);
     };
 
-    auto response = nlohmann::json::parse (data, nullptr, false);
+    std::vector<unsigned char> binary;
+    if (!choc::base64::decodeToContainer (binary, data))
+    {
+        lastError = "Got invalid license data (base64 decoding failed)";
+        return false;
+    }
+
+    std::vector<unsigned char> message (binary.size());
+    if (crypto_box_open_easy (message.data(), binary.data() + crypto_box_noncebytes(), binary.size() - crypto_box_noncebytes(), binary.data(), LicenseData::publicKey, LicenseData::privateKey)
+        != 0)
+    {
+        lastError = "Got invalid license data (decryption failed)";
+        return false;
+    }
+
+    auto response = nlohmann::json::parse (message, nullptr, false);
     if (response.is_discarded())
     {
-        lastError = "Got invalid license data";
+        lastError = "Got invalid license data (bad json)";
         return false;
     }
 

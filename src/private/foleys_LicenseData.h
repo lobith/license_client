@@ -8,9 +8,11 @@
 namespace LicenseData
 {
 
-extern const char* authServerUrl;
+extern const char* authServerUrl; //< license check backend
 extern const char* buyUrl;
 extern const char* productUid;
+extern const unsigned char* publicKey;     //< server's public
+extern const unsigned char* privateKey;    //< client's private
 
 }
 

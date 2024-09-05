@@ -44,6 +44,7 @@ target_compile_definitions(FoleysJuceLicenseExample
 target_link_libraries(FoleysJuceLicenseExample
         PRIVATE
         licensing
+        sodium
         juce::juce_audio_processors
         juce::juce_audio_devices
         juce::juce_audio_utils

@@ -29,7 +29,8 @@ target_sources(licensing
         foleys_License.h
         private/foleys_SharedObject.h
         private/foleys_Observers.h
-        private/foleys_SystemInfo.h)
+        private/foleys_SystemInfo.h
+        private/choc_Base64.h)
 
 if(APPLE)
     target_sources(licensing INTERFACE private/foleys_SystemInfo.mm)
