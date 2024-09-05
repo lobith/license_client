@@ -31,6 +31,11 @@ void Licensing::syncLicense()
     fetchLicenseData();
 }
 
+bool Licensing::checkHardwareUid() const
+{
+    return licenseHardware == hardwareUid;
+}
+
 bool Licensing::activated() const
 {
     return activatedFlag.load();
@@ -46,12 +51,12 @@ bool Licensing::expired() const
 
 bool Licensing::isAllowed() const
 {
-    return (activated() && !expired()) || isDemo();
+    return checkHardwareUid() && ((activated() && !expired()) || isDemo());
 }
 
 std::string Licensing::getLastError() const
 {
-    return lastError;
+    return lastErrorString;
 }
 
 std::optional<std::time_t> Licensing::expires() const
@@ -126,7 +131,15 @@ void Licensing::fetchLicenseData (std::string_view action, std::initializer_list
     {
         std::filesystem::create_directories (localStorage.parent_path());
         std::ofstream output (localStorage);
-        output << r.text;
+        if (output.is_open())
+        {
+            output << r.text;
+        }
+        else
+        {
+            lastError = Error::CouldNotSave;
+            lastErrorString = "Could not open license file for writing";
+        }
 
         observerList.call ([] (auto& l) { l.licenseFetched(); });
     }
@@ -147,28 +160,42 @@ bool Licensing::processData (std::string_view data)
     std::vector<unsigned char> binary;
     if (!choc::base64::decodeToContainer (binary, data))
     {
-        lastError = "Got invalid license data (base64 decoding failed)";
+        lastError       = Error::ServerAnswerInvalid;
+        lastErrorString = "Got invalid license data (base64 decoding failed)";
         return false;
     }
 
     std::vector<unsigned char> message (binary.size());
-    if (crypto_box_open_easy (message.data(), binary.data() + crypto_box_noncebytes(), binary.size() - crypto_box_noncebytes(), binary.data(), LicenseData::publicKey, LicenseData::privateKey)
+    if (crypto_box_open_easy (message.data(), binary.data() + crypto_box_noncebytes(), binary.size() - crypto_box_noncebytes(), binary.data(),
+                              LicenseData::publicKey, LicenseData::privateKey)
         != 0)
     {
-        lastError = "Got invalid license data (decryption failed)";
+        lastError       = Error::ServerAnswerInvalid;
+        lastErrorString = "Got invalid license data (decryption failed)";
         return false;
     }
 
     auto response = nlohmann::json::parse (message, nullptr, false);
     if (response.is_discarded())
     {
-        lastError = "Got invalid license data (bad json)";
+        lastError       = Error::ServerAnswerInvalid;
+        lastErrorString = "Got invalid license data (bad json)";
         return false;
     }
 
     checked       = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
     activatedFlag = response["activated"];
     email         = response.contains ("licensee_email") ? response["licensee_email"] : "";
+
+    licenseHardware = response["hardware"];
+
+    if (!checkHardwareUid())
+    {
+        activatedFlag   = false;
+        lastError       = Error::HardwareMismatch;
+        lastErrorString = "Hardware mismatch";
+        return false;
+    }
 
     if (response.contains ("license_expires"))
         expiryDate = convert_time (response["license_expires"], "%Y-%m-%d");
@@ -193,9 +220,15 @@ bool Licensing::processData (std::string_view data)
     }
 
     if (response.contains ("error"))
-        lastError = response["error"];
+    {
+        lastError       = Error::ServerAnswerInvalid;
+        lastErrorString = response["error"];
+    }
     else
-        lastError.clear();
+    {
+        lastError = Error::NoError;
+        lastErrorString.clear();
+    }
 
     return true;
 }
@@ -205,7 +238,13 @@ void Licensing::loadLicenseBlob()
     std::ifstream input (localStorage);
     std::string   text (std::istreambuf_iterator<char> { input }, {});
 
-    if (!processData (text))
+    if (text.empty())
+    {
+        lastError       = Error::CouldNotRead;
+        lastErrorString = "No local license file";
+        fetchLicenseData();
+    }
+    else if (!processData (text))
         fetchLicenseData();
     else
         observerList.call ([] (auto& l) { l.licenseLoaded(); });

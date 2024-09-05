@@ -19,6 +19,16 @@ namespace foleys
 class Licensing
 {
 public:
+    enum class Error
+    {
+        NoError = 0,
+        ServerNotAvailable,
+        ServerAnswerInvalid,
+        CouldNotSave,
+        CouldNotRead,
+        HardwareMismatch,
+    };
+
     Licensing();
 
     void setLocalStorage (const std::filesystem::path& path);
@@ -39,6 +49,13 @@ public:
      * @return the error as string
      */
     std::string getLastError() const;
+
+
+    /**
+     * Check if the hardwareUid and the uid in the license file match
+     * @return true if the hardwareUid matches the machine the license was activated to.
+     */
+    bool checkHardwareUid() const;
 
     /**
      * Check if the machine is activated.
@@ -126,11 +143,14 @@ public:
 private:
     [[nodiscard]] bool processData (std::string_view data);
 
-    mutable std::mutex         processingLock;
-    std::filesystem::path      localStorage;
-    std::string                hardwareUid;
+    mutable std::mutex    processingLock;
+    std::filesystem::path localStorage;
+    std::string           hardwareUid;
+    Error                 lastError = Error::NoError;
+    std::string           lastErrorString;
+
+    std::string                licenseHardware;
     std::string                email;
-    std::string                lastError;
     std::atomic<bool>          activatedFlag = false;
     std::atomic<bool>          demoAvailable = false;
     std::atomic<int>           demoDays      = 0;
