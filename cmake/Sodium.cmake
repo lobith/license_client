@@ -10,22 +10,28 @@ add_library(sodium STATIC IMPORTED GLOBAL)
 
 include(ExternalProject)
 
-set(SODIUM_PATH ${CMAKE_BINARY_DIR}/_deps/libsodium)
+set(SODIUM_ROOT ${CMAKE_BINARY_DIR}/_deps/libsodium-src)
+set(SODIUM_PATH ${SODIUM_ROOT}/src/libsodium)
 
 if(APPLE)
-    set(SODIUM_LIBRARY_FILE ${CMAKE_BINARY_DIR}/libsodium/lib/libsodium.a)
-
-
+    set(SODIUM_BUILD_SCRIPT ${SODIUM_PATH}/dist-build/macos.sh)
+    set(SODIUM_INCLUDE_PATH ${SODIUM_PATH}/libsodium-osx/include)
+    set(SODIUM_LIBRARY_FILE ${SODIUM_PATH}/libsodium-osx/lib/libsodium.a)
 else()
-    set(SODIUM_LIBRARY_FILE ${CMAKE_BINARY_DIR}/libsodium/lib/sodium.lib)
+    set(SODIUM_BUILD_SCRIPT ${SODIUM_PATH}/dist-build/msys2-win64.sh)
+    set(SODIUM_INCLUDE_PATH ${SODIUM_PATH}/libsodium-win/include)
+    set(SODIUM_LIBRARY_FILE ${SODIUM_PATH}/libsodium-win/lib/sodium.lib)
 endif()
 
 ExternalProject_Add(libsodium
-        PREFIX ${SODIUM_PATH}
+        PREFIX ${SODIUM_ROOT}
         URL https://download.libsodium.org/libsodium/releases/LATEST.tar.gz
-        CONFIGURE_COMMAND ${SODIUM_PATH}/src/libsodium/configure --prefix=${CMAKE_BINARY_DIR}/libsodium --disable-shared
-        BUILD_COMMAND make
-        BUILD_BYPRODUCTS ${SODIUM_LIBRARY_FILE})
+        CONFIGURE_COMMAND ""
+        BUILD_IN_SOURCE TRUE
+        BUILD_COMMAND ${SODIUM_BUILD_SCRIPT}
+        BUILD_BYPRODUCTS ${SODIUM_LIBRARY_FILE}
+        INSTALL_COMMAND ""
+)
 
 
 add_dependencies(sodium libsodium)
@@ -33,4 +39,4 @@ add_dependencies(sodium libsodium)
 set_property(TARGET sodium PROPERTY
         IMPORTED_LOCATION "${SODIUM_LIBRARY_FILE}")
 
-target_include_directories(sodium INTERFACE "${CMAKE_BINARY_DIR}/libsodium/include")
+target_include_directories(sodium INTERFACE "${SODIUM_INCLUDE_PATH}")
