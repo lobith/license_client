@@ -1,0 +1,47 @@
+name: licensing-client-examples
+
+on:
+  workflow_dispatch: # Lets you run a build from the UI.
+  push:
+    branches:
+      - 'master'
+      - 'main'
+      - 'hotfix'
+  pull_request: {}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    name: Build ${{ matrix.os }} - ${{ matrix.build_type }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, windows-latest ]
+        build_type: [ Debug, Release ]
+        include:
+          - os: windows-latest
+            CMAKE_PRESET: msvc
+          - os: macos-latest
+            CMAKE_PRESET: clang
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install ninja
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Add msbuild to PATH
+        if: runner.os == 'windows'
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure CMake
+        run: cmake --preset ${{ matrix.CMAKE_PRESET }} --log-level=VERBOSE
+
+      - name: Build
+        run: cmake --build --preset builder --config ${{ matrix.build_type }}
+
+#      - name: Run tests
+#        run: ctest --preset builder -j 4 -C ${{ matrix.build_type }}
