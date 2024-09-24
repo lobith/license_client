@@ -28,7 +28,7 @@ public:
 
     static bool needServerUpdate();
 
-    bool shouldShowPopup();
+    [[nodiscard]] bool shouldShowPopup();
 
     /**
      * Access the server for a new state
@@ -39,14 +39,21 @@ public:
      * If the last action resulted in an error, this will return it
      * @return the error as string
      */
-    std::string getLastErrorString() const;
+    [[nodiscard]] std::string getLastErrorString() const;
 
 
     /**
      * Check if the hardwareUid and the uid in the license file match
      * @return true if the hardwareUid matches the machine the license was activated to.
      */
-    bool checkHardwareUid() const;
+    [[nodiscard]] bool checkHardwareUid() const;
+
+    /**
+     * Verify if a license is applicable
+     * @param data the decrypted json string
+     * @return true if the hardware id matches
+     */
+    [[nodiscard]] static bool checkHardwareUid (std::string_view data);
 
     /**
      * Check if the machine is activated.
@@ -80,7 +87,7 @@ public:
      * When activated this can be used to display the licensee
      * @return the email the license is licensed to
      */
-    std::string getLicenseeEmail() const;
+    [[nodiscard]] std::string getLicenseeEmail() const;
 
     /**
      * Send a login request. The server will send a login link
@@ -115,11 +122,10 @@ public:
 private:
     std::pair<Licensing::Error, std::string> loadLicenseBlob();
 
-    void licenseLoaded() override;
-    void licenseFetched() override;
+    void licenseUpdated() override;
 
-    static std::string getContents();
-    static time_t      decodeDateTime (const std::string& timeString, const char* formatString);
+    [[nodiscard]] static std::string getContents();
+    [[nodiscard]] static time_t      decodeDateTime (const std::string& timeString, const char* formatString);
 
     [[nodiscard]] std::pair<Licensing::Error, std::string> processData (std::string_view data);
 

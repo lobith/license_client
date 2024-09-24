@@ -42,10 +42,7 @@ option(FOLEYS_LICENSING_HAS_JUCE "Set this ON if you build a juce project. juce 
 if (FOLEYS_LICENSING_HAS_JUCE)
     target_sources(licensing
             INTERFACE
-            juce/foleys_LicensePanel.cpp
-            juce/foleys_LicensePanel.h
-            juce/foleys_LicenseGui.cpp
-            juce/foleys_LicenseGui.h
+            juce/foleys_JuceUtilities.h
             juce/foleys_PopupHolder.h)
 endif ()
 

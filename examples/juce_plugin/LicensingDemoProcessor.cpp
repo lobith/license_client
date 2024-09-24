@@ -4,20 +4,12 @@
 
 #include "LicensingDemoProcessor.h"
 #include "LicensingDemoEditor.h"
+#include "juce/foleys_JuceUtilities.h"
 
 namespace foleys::Licensing
 {
 // This block sets up some static data for all instances of this plugin.
-static std::filesystem::path createLicensePath()
-{
-    auto appFolder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory);
-#if JUCE_MAC
-    appFolder = appFolder.getChildFile ("Application Support");
-#endif
-    return appFolder.getChildFile ("Manufacturer").getChildFile (LicenseData::productName).withFileExtension (".lic").getFullPathName().toRawUTF8();
-}
-
-const std::filesystem::path localStorage = createLicensePath();
+const std::filesystem::path localStorage = createLicensePath ("Manufacturer", LicenseData::productName);
 const std::string           hardwareUid  = juce::SystemStats::getUniqueDeviceID().toRawUTF8();
 }  // namespace foleys::Licensing
 

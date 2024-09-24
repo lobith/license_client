@@ -50,7 +50,7 @@ public:
     void componentMovedOrResized (juce::Component& component, [[maybe_unused]] bool wasMoved, [[maybe_unused]] bool wasResized) override
     {
         if (popup && parentComponent)
-            popup->setBounds (parentComponent->getLocalBounds());
+            popup->setBounds (component.getLocalBounds());
     }
 
 private:

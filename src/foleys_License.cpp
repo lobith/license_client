@@ -54,6 +54,19 @@ bool License::checkHardwareUid() const
     return Licensing::hardwareUid == licenseHardware;
 }
 
+// static
+bool License::checkHardwareUid (std::string_view data)
+{
+    auto response = nlohmann::json::parse (data, nullptr, false);
+    if (response.is_discarded())
+        return false;
+
+    if (response.contains ("hardware"))
+        return Licensing::hardwareUid == response["hardware"];
+
+    return false;
+}
+
 std::string License::getLastErrorString() const
 {
     return updater->getLastErrorString();
@@ -107,13 +120,13 @@ bool License::needServerUpdate()
         return true;
 
     auto timestamp = decodeDateTime (response["checked"], "%Y-%m-%dT%H:%M:%S");
-    auto seconds = std::difftime (std::time (nullptr), timestamp);
+    auto seconds   = std::difftime (std::time (nullptr), timestamp);
     return seconds > 3600 * 24;
 }
 
 bool License::shouldShowPopup()
 {
-    return !updater->wasPopupShown() && !isActivated();
+    return !isAllowed() || (!updater->wasPopupShown() && !isActivated());
 }
 
 
@@ -175,6 +188,9 @@ std::string License::getContents()
     std::ifstream input (Licensing::localStorage);
     std::string   cipher (std::istreambuf_iterator<char> { input }, {});
 
+    if (cipher.empty())
+        return {};
+
     return Crypto::decrypt (cipher);
 }
 
@@ -196,14 +212,10 @@ std::pair<Licensing::Error, std::string> License::loadLicenseBlob()
     return processData (text);
 }
 
-void License::licenseLoaded()
+void License::licenseUpdated()
 {
-    if (onLicenseReceived)
-        onLicenseReceived();
-}
+    loadLicenseBlob();
 
-void License::licenseFetched()
-{
     if (onLicenseReceived)
         onLicenseReceived();
 }

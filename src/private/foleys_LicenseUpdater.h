@@ -50,8 +50,7 @@ public:
     struct Observer
     {
         virtual ~Observer()           = default;
-        virtual void licenseLoaded()  = 0;
-        virtual void licenseFetched() = 0;
+        virtual void licenseUpdated() = 0;
     };
 
     /**
@@ -78,6 +77,8 @@ public:
     LicenseUpdater (const LicenseUpdater&) = delete;
 
 private:
+    void sendUpdateSignal();
+
     Licensing::Error       lastError = Licensing::Error::NoError;
     std::string            lastErrorString;
     ObserverList<Observer> observerList;

@@ -62,7 +62,16 @@ LicensePanel::LicensePanel()
     websiteButton.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
     websiteButton.onClick = [] { juce::URL (LicenseData::buyUrl).launchInDefaultBrowser(); };
 
-    license.onLicenseReceived = [this] { update(); };
+    juce::Component::SafePointer<LicensePanel> safePointer (this);
+    license.onLicenseReceived = [safePointer]
+    {
+        juce::MessageManager::callAsync (
+          [safePointer]
+          {
+              if (safePointer)
+                  safePointer->update();
+          });
+    };
 
     demo.onClick = [this]
     {
@@ -81,7 +90,11 @@ LicensePanel::LicensePanel()
     {
         if (!code.isEmpty())
         {
-
+            license.activate ({ { "computer", juce::SystemStats::getComputerName().toRawUTF8() },
+                                { "user", juce::SystemStats::getFullUserName().toRawUTF8() },
+                                { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
+                                { "host", juce::PluginHostType().getHostDescription() },
+                                { "serial", code.getText().toRawUTF8() } });
         }
     };
 
@@ -91,7 +104,10 @@ LicensePanel::LicensePanel()
 void LicensePanel::update()
 {
     demo.setEnabled (license.canDemo() || license.isAllowed());
-    if (license.isDemo())
+
+    if (license.isActivated())
+        demo.setButtonText (TRANS ("Plugin activated"));
+    else if (license.isDemo())
         demo.setButtonText (TRANS ("Days to evaluate: ") + juce::String (license.demoDaysLeft()));
     else if (!license.canDemo())
         demo.setButtonText (TRANS ("Demo expired, please buy a license"));
@@ -107,9 +123,9 @@ void LicensePanel::update()
         status.setText ("Your license expired on " + juce::String (dateString), juce::dontSendNotification);
     }
     else if (license.isActivated())
-        status.setText ("Plugin activated to " + license.getLicenseeEmail(), juce::sendNotification);
+        status.setText ("", juce::sendNotification);
     else if (license.isDemo())
-        status.setText ("Your demo will expire in " + juce::String (license.demoDaysLeft()) + " days", juce::dontSendNotification);
+        status.setText ({}, juce::dontSendNotification);
     else if (license.canDemo())
         status.setText ("Hit the Demo button to start your free " + juce::String (license.demoDaysLeft()) + " days trial", juce::dontSendNotification);
     else

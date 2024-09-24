@@ -35,10 +35,17 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
 
     cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/", cpr::Body (request.dump()));
 
-    auto answer = Crypto::decrypt(r.text);
+    auto answer = Crypto::decrypt (r.text);
 
+    if (answer.empty())
+    {
+        lastError       = Licensing::Error::ServerAnswerInvalid;
+        lastErrorString = "Server Error";
+        sendUpdateSignal();
+        return;
+    }
 
-//    if (processData (r.text))
+    if (License::checkHardwareUid (answer))
     {
         std::filesystem::create_directories (Licensing::localStorage.parent_path());
         std::ofstream output (Licensing::localStorage);
@@ -51,12 +58,20 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
             lastError       = Licensing::Error::CouldNotSave;
             lastErrorString = "Could not open license file for writing";
         }
-
-        observerList.call ([] (auto& l) { l.licenseFetched(); });
     }
-    observerList.call ([] (auto& l) { l.licenseFetched(); });
+    else
+    {
+        lastError       = Licensing::Error::ServerAnswerInvalid;
+        lastErrorString = "License not applicable";
+    }
+
+    sendUpdateSignal();
 }
 
+void LicenseUpdater::sendUpdateSignal()
+{
+    observerList.call ([] (auto& l) { l.licenseUpdated(); });
+}
 
 void LicenseUpdater::addObserver (Observer* observer)
 {
