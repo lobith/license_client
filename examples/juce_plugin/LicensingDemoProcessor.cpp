@@ -5,26 +5,30 @@
 #include "LicensingDemoProcessor.h"
 #include "LicensingDemoEditor.h"
 
-LicensingDemoProcessor::LicensingDemoProcessor()
+namespace foleys::Licensing
 {
-    // TODO: do this in the module itself
-    licensing->setHardwareUid (juce::SystemStats::getUniqueDeviceID().toRawUTF8());
-
-
+// This block sets up some static data for all instances of this plugin.
+static std::filesystem::path createLicensePath()
+{
     auto appFolder = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory);
 #if JUCE_MAC
     appFolder = appFolder.getChildFile ("Application Support");
 #endif
-    auto licFile = appFolder.getChildFile ("Manufacturer").getChildFile ("LicensingDemoPlugin.lic");
-    licensing->setLocalStorage (licFile.getFullPathName().toRawUTF8());
-    licensing->reload();
+    return appFolder.getChildFile ("Manufacturer").getChildFile (LicenseData::productName).withFileExtension (".lic").getFullPathName().toRawUTF8();
 }
+
+const std::filesystem::path localStorage = createLicensePath();
+const std::string           hardwareUid  = juce::SystemStats::getUniqueDeviceID().toRawUTF8();
+}  // namespace foleys::Licensing
+
+
+LicensingDemoProcessor::LicensingDemoProcessor() = default;
 
 void LicensingDemoProcessor::prepareToPlay ([[maybe_unused]] double sampleRate, [[maybe_unused]] int expectedNumSamples) { }
 
 void LicensingDemoProcessor::processBlock (juce::AudioBuffer<float>& buffer, [[maybe_unused]] juce::MidiBuffer& midi)
 {
-    if (!licensing->activated())
+    if (!license.isAllowed())
     {
         buffer.clear();
         return;

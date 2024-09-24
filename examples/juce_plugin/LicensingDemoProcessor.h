@@ -49,7 +49,7 @@ public:
     // ================================================================================
 
 private:
-    foleys::Licensing::Ptr licensing;
+    foleys::License license;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LicensingDemoProcessor)
 };

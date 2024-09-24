@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.24.1 FATAL_ERROR)
 
 include(juce)
 
+option(FOLEYS_LICENSING_HAS_JUCE "Enable juce GUI for the license client" ON)
 
 juce_add_plugin(FoleysJuceLicenseExample
         PRODUCT_NAME LicenseExample
@@ -41,8 +42,15 @@ target_compile_definitions(FoleysJuceLicenseExample
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0)
 
+juce_add_binary_data(
+        FoleysJuceLicenseExample_data
+        SOURCES
+        Resources/pdf-icon.svg
+        Resources/www-icon.svg)
+
 target_link_libraries(FoleysJuceLicenseExample
         PRIVATE
+        FoleysJuceLicenseExample_data
         licensing
         sodium
         juce::juce_audio_processors

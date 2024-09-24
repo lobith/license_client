@@ -7,6 +7,8 @@
 
 #include "private/foleys_SharedObject.h"
 #include "private/foleys_Observers.h"
+#include "private/foleys_LicenseData.h"
+#include "private/foleys_LicenseUpdater.h"
 
 #include <atomic>
 #include <optional>
@@ -16,23 +18,17 @@
 namespace foleys
 {
 
-class Licensing
+
+class License : private LicenseUpdater::Observer
 {
 public:
-    enum class Error
-    {
-        NoError = 0,
-        ServerNotAvailable,
-        ServerAnswerInvalid,
-        CouldNotSave,
-        CouldNotRead,
-        HardwareMismatch,
-    };
+    License();
+    ~License() override;
 
-    Licensing();
 
-    void setLocalStorage (const std::filesystem::path& path);
-    void setHardwareUid (std::string_view uid);
+    static bool needServerUpdate();
+
+    bool shouldShowPopup();
 
     /**
      * Access the server for a new state
@@ -40,15 +36,10 @@ public:
     void syncLicense();
 
     /**
-     * Load the state from disk and if necessary fetch a new license
-     */
-    void reload();
-
-    /**
      * If the last action resulted in an error, this will return it
      * @return the error as string
      */
-    std::string getLastError() const;
+    std::string getLastErrorString() const;
 
 
     /**
@@ -63,7 +54,7 @@ public:
      *
      * @return true if this machine is checked and activated.
      */
-    [[nodiscard]] bool activated() const;
+    [[nodiscard]] bool isActivated() const;
 
     /**
      * Check if the machine is expired (according to server time)
@@ -71,7 +62,7 @@ public:
      *
      * @return true if the expiry date is in the past.
      */
-    [[nodiscard]] bool expired() const;
+    [[nodiscard]] bool isExpired() const;
 
     /**
      * This is a shorthand that either a license that is not expired or a demo is running
@@ -111,43 +102,30 @@ public:
     void startDemo();
 
     /**
-     * Tries to get new license data from the server.
-     * @param action an optional action. Allowed values: 'demo' or 'activate'. Anything else just gets the status
+     * Set a flag in the updater to avoid multiple times popup
+     * @param wasShown
      */
-    void fetchLicenseData (std::string_view action = {}, std::initializer_list<std::pair<std::string, std::string>> data = {});
-    void loadLicenseBlob();
-
-    bool lastCheckExpired() const;
-
-    using Ptr = SharedObject<Licensing>;
-
-    struct Observer
-    {
-        virtual ~Observer()           = default;
-        virtual void licenseLoaded()  = 0;
-        virtual void licenseFetched() = 0;
-    };
+    void setPopupWasShown (bool wasShown) { updater->setPopupWasShown (wasShown); }
 
     /**
-     * Register an observer when a new license answer is received or loaded. Make sure to removeObserver before you destroy the observer.
-     * @param observer
+     * This is called when a valid license was received
      */
-    void addObserver (Observer* observer);
-
-    /**
-     * Deregister an observer
-     * @param observer
-     */
-    void removeObserver (Observer* observer);
+    std::function<void()> onLicenseReceived;
 
 private:
-    [[nodiscard]] bool processData (std::string_view data);
+    std::pair<Licensing::Error, std::string> loadLicenseBlob();
 
-    mutable std::mutex    processingLock;
-    std::filesystem::path localStorage;
-    std::string           hardwareUid;
-    Error                 lastError = Error::NoError;
-    std::string           lastErrorString;
+    void licenseLoaded() override;
+    void licenseFetched() override;
+
+    static std::string getContents();
+    static time_t      decodeDateTime (const std::string& timeString, const char* formatString);
+
+    [[nodiscard]] std::pair<Licensing::Error, std::string> processData (std::string_view data);
+
+    LicenseUpdater::Ptr updater;
+
+    mutable std::mutex processingLock;
 
     std::string                licenseHardware;
     std::string                email;
@@ -156,7 +134,6 @@ private:
     std::atomic<int>           demoDays      = 0;
     std::optional<std::time_t> expiryDate;
     std::time_t                checked = {};
-    ObserverList<Observer>     observerList;
 };
 
 

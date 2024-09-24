@@ -5,43 +5,38 @@
 #include "foleys_License.h"
 
 #include "private/foleys_LicenseData.h"
+#include "private/foleys_Crypto.h"
 
-#include <private/choc_Base64.h>
 #include <nlohmann/json.hpp>
-#include <cpr/cpr.h>
-#include <sodium.h>
-
-#include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
 
 namespace foleys
 {
 
-Licensing::Licensing() = default;
-
-void Licensing::reload()
+License::License()
 {
+    updater->addObserver (this);
     loadLicenseBlob();
-
-    if (lastCheckExpired())
-        syncLicense();
 }
 
-void Licensing::syncLicense()
+License::~License()
 {
-    fetchLicenseData();
+    updater->removeObserver (this);
 }
 
-bool Licensing::checkHardwareUid() const
+void License::syncLicense()
 {
-    return licenseHardware == hardwareUid;
+    updater->fetchLicenseData();
 }
 
-bool Licensing::activated() const
+bool License::isActivated() const
 {
     return activatedFlag.load();
 }
 
-bool Licensing::expired() const
+bool License::isExpired() const
 {
     if (expiryDate)
         return *expiryDate < std::time (nullptr);
@@ -49,141 +44,91 @@ bool Licensing::expired() const
     return false;
 }
 
-bool Licensing::isAllowed() const
+bool License::isAllowed() const
 {
-    return checkHardwareUid() && ((activated() && !expired()) || isDemo());
+    return checkHardwareUid() && ((isActivated() && !isExpired()) || isDemo());
 }
 
-std::string Licensing::getLastError() const
+bool License::checkHardwareUid() const
 {
-    return lastErrorString;
+    return Licensing::hardwareUid == licenseHardware;
 }
 
-std::optional<std::time_t> Licensing::expires() const
+std::string License::getLastErrorString() const
+{
+    return updater->getLastErrorString();
+}
+
+std::optional<std::time_t> License::expires() const
 {
     return expiryDate;
 }
 
-std::string Licensing::getLicenseeEmail() const
+std::string License::getLicenseeEmail() const
 {
     std::scoped_lock guard (processingLock);
     return email;
 }
 
-void Licensing::login (const std::string& login_email)
+void License::login (const std::string& login_email)
 {
-    fetchLicenseData ("login", { { "login_email", login_email } });
+    updater->fetchLicenseData ("login", { { "login_email", login_email } });
 }
 
-void Licensing::activate (std::initializer_list<std::pair<std::string, std::string>> data)
+void License::activate (std::initializer_list<std::pair<std::string, std::string>> data)
 {
-    fetchLicenseData ("activate", data);
+    updater->fetchLicenseData ("activate", data);
 }
 
-bool Licensing::canDemo() const
+bool License::canDemo() const
 {
     return demoAvailable;
 }
 
-bool Licensing::isDemo() const
+bool License::isDemo() const
 {
-    return !demoAvailable && demoDays > 0;
+    return demoDays > 0;
 }
 
-int Licensing::demoDaysLeft() const
+int License::demoDaysLeft() const
 {
     return demoDays;
 }
 
-void Licensing::startDemo()
+void License::startDemo()
 {
-    fetchLicenseData ("demo");
+    updater->fetchLicenseData ("demo");
 }
 
-void Licensing::setLocalStorage (const std::filesystem::path& path)
+bool License::needServerUpdate()
 {
-    localStorage = path;
-    if (std::filesystem::exists (localStorage))
-        loadLicenseBlob();
+    auto response = nlohmann::json::parse (getContents(), nullptr, false);
+    if (response.is_discarded())
+        return true;
+
+    auto timestamp = decodeDateTime (response["checked"], "%Y-%m-%dT%H:%M:%S");
+    auto seconds = std::difftime (std::time (nullptr), timestamp);
+    return seconds > 3600 * 24;
 }
 
-void Licensing::setHardwareUid (std::string_view uid)
+bool License::shouldShowPopup()
 {
-    hardwareUid = uid;
+    return !updater->wasPopupShown() && !isActivated();
 }
+
 
 // ================================================================================
 
-void Licensing::fetchLicenseData (std::string_view action, std::initializer_list<std::pair<std::string, std::string>> data)
+
+std::pair<Licensing::Error, std::string> License::processData (std::string_view message)
 {
-    nlohmann::json request;
-    request["product"]  = LicenseData::productUid;
-    request["hardware"] = hardwareUid;
-    if (!action.empty())
-        request["action"] = action;
-
-    for (const auto& pair: data)
-        request[pair.first] = pair.second;
-
-    cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/", cpr::Body (request.dump()));
-
-    if (processData (r.text))
-    {
-        std::filesystem::create_directories (localStorage.parent_path());
-        std::ofstream output (localStorage);
-        if (output.is_open())
-        {
-            output << r.text;
-        }
-        else
-        {
-            lastError = Error::CouldNotSave;
-            lastErrorString = "Could not open license file for writing";
-        }
-
-        observerList.call ([] (auto& l) { l.licenseFetched(); });
-    }
-}
-
-bool Licensing::processData (std::string_view data)
-{
-    std::scoped_lock guard (processingLock);
-
-    const auto convert_time = [] (const std::string& timeString, const char* formatString)
-    {
-        std::tm            tm {};
-        std::istringstream ss (timeString);
-        ss >> std::get_time (&tm, formatString);
-        return std::mktime (&tm);
-    };
-
-    std::vector<unsigned char> binary;
-    if (!choc::base64::decodeToContainer (binary, data))
-    {
-        lastError       = Error::ServerAnswerInvalid;
-        lastErrorString = "Got invalid license data (base64 decoding failed)";
-        return false;
-    }
-
-    std::vector<unsigned char> message (binary.size());
-    if (crypto_box_open_easy (message.data(), binary.data() + crypto_box_noncebytes(), binary.size() - crypto_box_noncebytes(), binary.data(),
-                              LicenseData::publicKey, LicenseData::privateKey)
-        != 0)
-    {
-        lastError       = Error::ServerAnswerInvalid;
-        lastErrorString = "Got invalid license data (decryption failed)";
-        return false;
-    }
-
     auto response = nlohmann::json::parse (message, nullptr, false);
     if (response.is_discarded())
-    {
-        lastError       = Error::ServerAnswerInvalid;
-        lastErrorString = "Got invalid license data (bad json)";
-        return false;
-    }
+        return { Licensing::Error::ServerAnswerInvalid, "Got invalid license data (bad json)" };
 
-    checked       = convert_time (response["checked"], "%Y-%m-%dT%H:%M:%S");
+    std::scoped_lock guard (processingLock);
+
+    checked       = decodeDateTime (response["checked"], "%Y-%m-%dT%H:%M:%S");
     activatedFlag = response["activated"];
     email         = response.contains ("licensee_email") ? response["licensee_email"] : "";
 
@@ -191,14 +136,12 @@ bool Licensing::processData (std::string_view data)
 
     if (!checkHardwareUid())
     {
-        activatedFlag   = false;
-        lastError       = Error::HardwareMismatch;
-        lastErrorString = "Hardware mismatch";
-        return false;
+        activatedFlag = false;
+        return { Licensing::Error::HardwareMismatch, "Hardware mismatch" };
     }
 
     if (response.contains ("license_expires"))
-        expiryDate = convert_time (response["license_expires"], "%Y-%m-%d");
+        expiryDate = decodeDateTime (response["license_expires"], "%Y-%m-%d");
     else
         expiryDate = std::nullopt;
 
@@ -208,7 +151,7 @@ bool Licensing::processData (std::string_view data)
         demoDays      = response["demo_days"];
         if (response.contains ("demo_ends"))
         {
-            auto ends          = convert_time (response["demo_ends"], "%Y-%m-%d");
+            auto ends          = decodeDateTime (response["demo_ends"], "%Y-%m-%d");
             auto localDemoDays = static_cast<int> (1 + difftime (ends, std::time (nullptr)) / (24 * 3600));
             demoDays           = std::min (demoDays.load(), localDemoDays);
         }
@@ -221,49 +164,48 @@ bool Licensing::processData (std::string_view data)
 
     if (response.contains ("error"))
     {
-        lastError       = Error::ServerAnswerInvalid;
-        lastErrorString = response["error"];
-    }
-    else
-    {
-        lastError = Error::NoError;
-        lastErrorString.clear();
+        return { Licensing::Error::HardwareMismatch, response["error"] };
     }
 
-    return true;
+    return { Licensing::Error::NoError, {} };
 }
 
-void Licensing::loadLicenseBlob()
+std::string License::getContents()
 {
-    std::ifstream input (localStorage);
-    std::string   text (std::istreambuf_iterator<char> { input }, {});
+    std::ifstream input (Licensing::localStorage);
+    std::string   cipher (std::istreambuf_iterator<char> { input }, {});
+
+    return Crypto::decrypt (cipher);
+}
+
+time_t License::decodeDateTime (const std::string& timeString, const char* formatString)
+{
+    std::tm            tm {};
+    std::istringstream ss (timeString);
+    ss >> std::get_time (&tm, formatString);
+    return std::mktime (&tm);
+}
+
+std::pair<Licensing::Error, std::string> License::loadLicenseBlob()
+{
+    auto text = getContents();
 
     if (text.empty())
-    {
-        lastError       = Error::CouldNotRead;
-        lastErrorString = "No local license file";
-        fetchLicenseData();
-    }
-    else if (!processData (text))
-        fetchLicenseData();
-    else
-        observerList.call ([] (auto& l) { l.licenseLoaded(); });
+        return { Licensing::Error::CouldNotRead, "No local license file" };
+
+    return processData (text);
 }
 
-bool Licensing::lastCheckExpired() const
+void License::licenseLoaded()
 {
-    auto seconds = std::difftime (std::time (nullptr), checked);
-    return seconds > 3600 * 24;
+    if (onLicenseReceived)
+        onLicenseReceived();
 }
 
-void Licensing::addObserver (Observer* observer)
+void License::licenseFetched()
 {
-    observerList.addObserver (observer);
-}
-
-void Licensing::removeObserver (Observer* observer)
-{
-    observerList.removeObserver (observer);
+    if (onLicenseReceived)
+        onLicenseReceived();
 }
 
 

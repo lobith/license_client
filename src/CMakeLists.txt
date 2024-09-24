@@ -11,7 +11,6 @@ option(CURL_ZLIB OFF)
 option(CPR_BUILD_TESTS OFF)
 FetchContent_Declare(cpr
         GIT_REPOSITORY https://github.com/libcpr/cpr.git
-        GIT_TAG 1.10.5
         GIT_SHALLOW ON)
 FetchContent_MakeAvailable(cpr)
 
@@ -29,14 +28,31 @@ target_sources(licensing
         INTERFACE
         foleys_License.cpp
         foleys_License.h
+        private/foleys_LicenseUpdater.cpp
+        private/foleys_LicenseUpdater.h
+        private/foleys_Crypto.cpp
+        private/foleys_Crypto.h
         private/foleys_SharedObject.h
         private/foleys_Observers.h
         private/foleys_SystemInfo.h
         private/choc_Base64.h)
 
-if(APPLE)
+option(FOLEYS_LICENSING_HAS_JUCE "Set this ON if you build a juce project. juce needs be present in the including target." OFF)
+
+if (FOLEYS_LICENSING_HAS_JUCE)
+    target_sources(licensing
+            INTERFACE
+            juce/foleys_LicensePanel.cpp
+            juce/foleys_LicensePanel.h
+            juce/foleys_LicenseGui.cpp
+            juce/foleys_LicenseGui.h
+            juce/foleys_PopupHolder.h)
+endif ()
+
+
+if (APPLE)
     target_sources(licensing INTERFACE private/foleys_SystemInfo.mm)
-else()
+else ()
     target_sources(licensing INTERFACE private/foleys_SystemInfo.cpp)
 endif ()
 

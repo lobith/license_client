@@ -10,24 +10,18 @@ LicensingDemoEditor::LicensingDemoEditor (LicensingDemoProcessor& p) : juce::Aud
 {
     juce::Component::SafePointer<LicensingDemoEditor> safePointer (this);
 
-    addAndMakeVisible(aboutButton);
-    aboutButton.onClick = [this]
-    {
-        licensingPanel.showLicense();
-    };
+    addAndMakeVisible (aboutButton);
+    aboutButton.onClick = [this] { popupHolder.showPopup (std::make_unique<LicensePanel>()); };
 
-    juce::Timer::callAfterDelay (5000,
-                                 [safePointer, this]
-                                 {
-                                     if (!safePointer)
-                                         return;
-
-                                     foleys::Licensing::Ptr licensing;
-                                     if (!licensing->activated() || licensing->expired())
-                                         licensingPanel.showLicense();
-                                 });
-
+    setResizable (true, true);
     setSize (640, 480);
+
+    foleys::License license;
+    if (license.shouldShowPopup())
+    {
+        popupHolder.showPopup (std::make_unique<LicensePanel>());
+        license.setPopupWasShown (true);
+    }
 }
 
 void LicensingDemoEditor::paint (juce::Graphics& g)
@@ -40,6 +34,5 @@ void LicensingDemoEditor::paint (juce::Graphics& g)
 
 void LicensingDemoEditor::resized()
 {
-    aboutButton.setBounds(getWidth() - 80, 0, 80, 20);
-    licensingPanel.updateLayout (getLocalBounds());
+    aboutButton.setBounds (getWidth() - 80, 0, 80, 20);
 }

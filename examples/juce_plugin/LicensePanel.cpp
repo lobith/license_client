@@ -3,86 +3,115 @@
 //
 
 #include "LicensePanel.h"
+#include "BinaryData.h"
 
 #include <foleys_License.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 
 
-LicensePanel::LicensePanel (LicensePanelHolder& holder) : panelHolder (holder)
+LicensePanel::LicensePanel()
 {
-    foleys::Licensing::Ptr()->syncLicense();
+    const juce::Colour buttonColour { 55, 69, 129 };
+    const juce::Colour labelColour { 40, 41, 46 };
 
-    addAndMakeVisible (email);
+    addAndMakeVisible (title);
+    addAndMakeVisible (enterSerial);
+    addAndMakeVisible (code);
+    addAndMakeVisible (submit);
     addAndMakeVisible (status);
-    addAndMakeVisible (closeButton);
     addAndMakeVisible (demo);
-    addAndMakeVisible (activate);
-    addAndMakeVisible (refresh);
-    addAndMakeVisible (manage);
+    addAndMakeVisible (manualButton);
+    addAndMakeVisible (websiteButton);
+    addAndMakeVisible (copyright);
 
-    email.setTextToShowWhenEmpty ("email for activation", juce::Colours::grey);
+    title.setJustificationType (juce::Justification::centred);
+    title.setColour (juce::Label::textColourId, juce::Colours::silver);
+    title.setText (LicenseData::productName, juce::dontSendNotification);
+    title.setFont (juce::Font (24.0f));
 
-    closeButton.onClick = [this]
+    code.setColour (juce::TextEditor::backgroundColourId, labelColour);
+    code.setTextToShowWhenEmpty ("XXXX-YYYY-ZZZZ-WWWW", juce::Colours::grey);
+    code.setJustification (juce::Justification::centred);
+
+    submit.setColour (juce::TextButton::buttonColourId, buttonColour);
+    submit.setColour (juce::TextButton::textColourOffId, juce::Colours::silver);
+    demo.setColour (juce::TextButton::buttonColourId, buttonColour);
+    demo.setColour (juce::TextButton::textColourOffId, juce::Colours::silver);
+
+    enterSerial.setJustificationType (juce::Justification::centred);
+    enterSerial.setColour (juce::Label::textColourId, juce::Colours::silver);
+    enterSerial.setFont (juce::Font (18.0f));
+
+    status.setJustificationType (juce::Justification::centred);
+    status.setColour (juce::Label::textColourId, juce::Colours::silver);
+
+    copyright.setJustificationType (juce::Justification::centred);
+    copyright.setColour (juce::Label::textColourId, juce::Colours::silver);
+    copyright.setText (LicenseData::copyright, juce::dontSendNotification);
+    copyright.setFont (juce::Font (12.0f));
+
+    auto manualImage = juce::DrawableComposite::createFromImageData (BinaryData::pdficon_svg, BinaryData::pdficon_svgSize);
+    manualImage->replaceColour (juce::Colours::black, juce::Colours::silver);
+    manualButton.setImages (manualImage.get());
+    manualButton.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
+    manualButton.onClick = [] { juce::URL (LicenseData::manualUrl).launchInDefaultBrowser(); };
+
+    auto websiteImage = juce::DrawableComposite::createFromImageData (BinaryData::wwwicon_svg, BinaryData::wwwicon_svgSize);
+    websiteImage->replaceColour (juce::Colours::black, juce::Colours::silver);
+    websiteButton.setImages (websiteImage.get());
+    websiteButton.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
+    websiteButton.onClick = [] { juce::URL (LicenseData::buyUrl).launchInDefaultBrowser(); };
+
+    license.onLicenseReceived = [this] { update(); };
+
+    demo.onClick = [this]
     {
-        if (foleys::Licensing::Ptr()->isAllowed())
-            panelHolder.closePanel();
-    };
-
-    refresh.onClick = [] { foleys::Licensing::Ptr()->syncLicense(); };
-
-    demo.onClick = [] { foleys::Licensing::Ptr()->startDemo(); };
-
-    activate.onClick = [this]
-    {
-        if (email.isEmpty())
+        if (license.isAllowed())
         {
-            status.setText ("Please enter the email you used to purchase the license", juce::sendNotification);
-            return;
+            if (onCloseRequest)
+                onCloseRequest();
         }
-
-        foleys::Licensing::Ptr licensing;
-        licensing->activate ({ { "computer", juce::SystemStats::getComputerName().toRawUTF8() },
-                               { "user", juce::SystemStats::getFullUserName().toRawUTF8() },
-                               { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
-                               { "host", juce::PluginHostType().getHostDescription() },
-                               { "email", email.getText().toLowerCase().toRawUTF8() } });
+        else if (license.canDemo())
+        {
+            license.startDemo();
+        }
     };
 
-    manage.onClick = [this] { foleys::Licensing::Ptr()->login (email.getText().toRawUTF8()); };
+    submit.onClick = [this]
+    {
+        if (!code.isEmpty())
+        {
 
-    foleys::Licensing::Ptr()->addObserver (this);
+        }
+    };
 
     update();
 }
 
-LicensePanel::~LicensePanel()
-{
-    foleys::Licensing::Ptr()->removeObserver (this);
-}
-
 void LicensePanel::update()
 {
-    foleys::Licensing::Ptr licensing;
-    demo.setEnabled (licensing->canDemo());
+    demo.setEnabled (license.canDemo() || license.isAllowed());
+    if (license.isDemo())
+        demo.setButtonText (TRANS ("Days to evaluate: ") + juce::String (license.demoDaysLeft()));
+    else if (!license.canDemo())
+        demo.setButtonText (TRANS ("Demo expired, please buy a license"));
 
-    closeButton.setVisible (licensing->isAllowed());
-
-    juce::String lastError (licensing->getLastError());
+    juce::String lastError (license.getLastErrorString());
     if (lastError.isNotEmpty())
         status.setText (lastError, juce::dontSendNotification);
-    else if (licensing->expired())
+    else if (license.isExpired())
     {
         char dateString[64];
-        auto expiryDate = *licensing->expires();
+        auto expiryDate = *license.expires();
         std::strftime (dateString, 64, "%d. %m %Y", std::localtime (&expiryDate));
         status.setText ("Your license expired on " + juce::String (dateString), juce::dontSendNotification);
     }
-    else if (licensing->activated())
-        status.setText ("Plugin activated to " + licensing->getLicenseeEmail(), juce::sendNotification);
-    else if (licensing->isDemo())
-        status.setText ("Your demo will expire in " + juce::String (licensing->demoDaysLeft()) + " days", juce::dontSendNotification);
-    else if (licensing->canDemo())
-        status.setText ("Hit the Demo button to start your free " + juce::String (licensing->demoDaysLeft()) + " days trial", juce::dontSendNotification);
+    else if (license.isActivated())
+        status.setText ("Plugin activated to " + license.getLicenseeEmail(), juce::sendNotification);
+    else if (license.isDemo())
+        status.setText ("Your demo will expire in " + juce::String (license.demoDaysLeft()) + " days", juce::dontSendNotification);
+    else if (license.canDemo())
+        status.setText ("Hit the Demo button to start your free " + juce::String (license.demoDaysLeft()) + " days trial", juce::dontSendNotification);
     else
         status.setText ("If you bought a license enter your email and hit Activate", juce::dontSendNotification);
 }
@@ -90,58 +119,27 @@ void LicensePanel::update()
 void LicensePanel::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black.withAlpha (0.8f));
-
-    foleys::Licensing::Ptr licensing;
-    if (licensing->isDemo())
-    {
-        g.setColour (juce::Colours::silver);
-        g.drawFittedText ("Your demo will expire in " + juce::String (licensing->demoDaysLeft()) + " days", getLocalBounds(), juce::Justification::centred, 1);
-    }
 }
 
 void LicensePanel::resized()
 {
-    closeButton.setBounds (getWidth() - 80, 0, 80, 20);
+    auto area = getLocalBounds().reduced (40);
+    area      = area.withSizeKeepingCentre (std::min (area.getWidth(), 400), area.getHeight());
 
-    auto area = getLocalBounds();
-    status.setBounds (area.removeFromBottom (40).reduced (20, 5));
-    auto buttonRow = area.removeFromBottom (70);
+    title.setBounds (area.removeFromTop (40).reduced (80, 0));
+    copyright.setBounds (area.removeFromBottom (30).withTrimmedTop (10));
 
-    juce::FlexBox flexBox;
-    flexBox.items = {
-        juce::FlexItem (demo).withFlex (1.0).withMargin (20),
-        juce::FlexItem (activate).withFlex (1.0).withMargin (20),
-        juce::FlexItem (refresh).withFlex (1.0).withMargin (20),
-        juce::FlexItem (manage).withFlex (1.0).withMargin (20),
-    };
+    auto buttonArea = area.removeFromBottom (area.getHeight() / 4);
+    manualButton.setBounds (buttonArea.removeFromLeft (buttonArea.getWidth() / 2).withTrimmedRight (10));
+    websiteButton.setBounds (buttonArea.withTrimmedLeft (10));
 
-    flexBox.performLayout (buttonRow);
+    demo.setBounds (area.removeFromBottom (60).withSizeKeepingCentre (std::min (area.getWidth(), 250), 30));
 
-    email.setBounds (area.removeFromBottom (70).reduced (20));
-}
+    auto third = area.getHeight() / 3;
+    enterSerial.setBounds (area.removeFromTop (third));
+    status.setBounds (area.removeFromBottom (third));
 
-// ================================================================================
-
-LicensePanelHolder::LicensePanelHolder (juce::Component* parent) : parentComponent (parent) { }
-
-void LicensePanelHolder::showLicense()
-{
-    if (!parentComponent)
-        return;
-
-    panel = std::make_unique<LicensePanel> (*this);
-    parentComponent->addAndMakeVisible (panel.get());
-
-    parentComponent->resized();
-}
-
-void LicensePanelHolder::closePanel()
-{
-    panel.reset();
-}
-
-void LicensePanelHolder::updateLayout (juce::Rectangle<int> bounds)
-{
-    if (panel)
-        panel->setBounds (bounds);
+    area.reduce (30, 0);
+    submit.setBounds (area.removeFromRight (area.getWidth() / 4).reduced (10));
+    code.setBounds (area.reduced (10));
 }

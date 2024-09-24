@@ -5,60 +5,37 @@
 #ifndef FOLEYS_LICENSING_CLIENT_LICENSEPANEL_H
 #define FOLEYS_LICENSING_CLIENT_LICENSEPANEL_H
 
+#include "juce/foleys_PopupHolder.h"
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <foleys_License.h>
 
 class LicensePanelHolder;
 
-class LicensePanel
-  : public juce::Component
-  , public foleys::Licensing::Observer
+class LicensePanel : public foleys::Popup
 {
 public:
-    explicit LicensePanel (LicensePanelHolder& holder);
-    ~LicensePanel() override;
+    explicit LicensePanel();
 
     void paint (juce::Graphics& g) override;
     void resized() override;
 
     void update();
 
-    void licenseLoaded() override
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-        update();
-    }
-    void licenseFetched() override
-    {
-        JUCE_ASSERT_MESSAGE_THREAD
-        update();
-    }
-
 private:
-    LicensePanelHolder& panelHolder;
-    juce::TextEditor    email;
-    juce::Label         status;
-    juce::TextButton    closeButton { TRANS ("Close"), TRANS ("Close panel") };
-    juce::TextButton    demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
-    juce::TextButton    activate { TRANS ("Activate"), TRANS ("Request an activation from the server (need to be online)") };
-    juce::TextButton    refresh { TRANS ("Refresh"), TRANS ("Check activation status again") };
-    juce::TextButton    manage { TRANS ("Manage"), TRANS ("Open the license management website") };
+    foleys::License license;
+
+    juce::Label          title;
+    juce::Label          enterSerial { {}, TRANS ("ENTER SERIAL") };
+    juce::TextEditor     code;
+    juce::TextButton     submit { TRANS ("ENTER"), TRANS ("Submit code") };
+    juce::Label          status;
+    juce::TextButton     demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
+    juce::DrawableButton manualButton { "Manual Guide", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
+    juce::DrawableButton websiteButton { "Buy License", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
+    juce::Label          copyright;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LicensePanel)
-};
-
-class LicensePanelHolder
-{
-public:
-    explicit LicensePanelHolder (juce::Component* parent);
-
-    void showLicense();
-    void closePanel();
-    void updateLayout (juce::Rectangle<int> bounds);
-
-private:
-    juce::Component::SafePointer<juce::Component> parentComponent;
-    std::unique_ptr<LicensePanel>                 panel;
 };
 
 
