@@ -32,6 +32,7 @@ private:
     juce::Label          status;
     juce::TextButton     demo { TRANS ("Start Demo"), TRANS ("Start your 14 days free trial period") };
     juce::DrawableButton manualButton { "Manual Guide", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
+    juce::DrawableButton homeButton { "My Licenses", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
     juce::DrawableButton websiteButton { "Buy License", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
     juce::Label          copyright;
 

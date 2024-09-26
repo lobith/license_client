@@ -21,6 +21,7 @@ LicensePanel::LicensePanel()
     addAndMakeVisible (status);
     addAndMakeVisible (demo);
     addAndMakeVisible (manualButton);
+    addAndMakeVisible (homeButton);
     addAndMakeVisible (websiteButton);
     addAndMakeVisible (copyright);
 
@@ -50,17 +51,18 @@ LicensePanel::LicensePanel()
     copyright.setText (LicenseData::copyright, juce::dontSendNotification);
     copyright.setFont (juce::Font (12.0f));
 
-    auto manualImage = juce::DrawableComposite::createFromImageData (BinaryData::pdficon_svg, BinaryData::pdficon_svgSize);
-    manualImage->replaceColour (juce::Colours::black, juce::Colours::silver);
-    manualButton.setImages (manualImage.get());
-    manualButton.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
-    manualButton.onClick = [] { juce::URL (LicenseData::manualUrl).launchInDefaultBrowser(); };
+    const auto setupButton = [] (auto& button, const char* icon, size_t icon_size, const juce::URL& url)
+    {
+        auto image = juce::DrawableComposite::createFromImageData (icon, icon_size);
+        image->replaceColour (juce::Colours::black, juce::Colours::silver);
+        button.setImages (image.get());
+        button.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
+        button.onClick = [url] { url.launchInDefaultBrowser(); };
+    };
 
-    auto websiteImage = juce::DrawableComposite::createFromImageData (BinaryData::wwwicon_svg, BinaryData::wwwicon_svgSize);
-    websiteImage->replaceColour (juce::Colours::black, juce::Colours::silver);
-    websiteButton.setImages (websiteImage.get());
-    websiteButton.setColour (juce::DrawableButton::backgroundColourId, juce::Colours::darkgrey);
-    websiteButton.onClick = [] { juce::URL (LicenseData::buyUrl).launchInDefaultBrowser(); };
+    setupButton (manualButton, BinaryData::pdficon_svg, BinaryData::pdficon_svgSize, juce::URL (LicenseData::manualUrl));
+    setupButton (homeButton, BinaryData::keyicon_svg, BinaryData::keyicon_svgSize, juce::URL (LicenseData::authServerUrl));
+    setupButton (websiteButton, BinaryData::wwwicon_svg, BinaryData::wwwicon_svgSize, juce::URL (LicenseData::buyUrl));
 
     juce::Component::SafePointer<LicensePanel> safePointer (this);
     license.onLicenseReceived = [safePointer]
@@ -94,6 +96,7 @@ LicensePanel::LicensePanel()
                                 { "user", juce::SystemStats::getFullUserName().toRawUTF8() },
                                 { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
                                 { "host", juce::PluginHostType().getHostDescription() },
+                                { "version", LicenseData::version },
                                 { "serial", code.getText().toRawUTF8() } });
         }
     };
@@ -145,9 +148,11 @@ void LicensePanel::resized()
     title.setBounds (area.removeFromTop (40).reduced (80, 0));
     copyright.setBounds (area.removeFromBottom (30).withTrimmedTop (10));
 
-    auto buttonArea = area.removeFromBottom (area.getHeight() / 4);
-    manualButton.setBounds (buttonArea.removeFromLeft (buttonArea.getWidth() / 2).withTrimmedRight (10));
-    websiteButton.setBounds (buttonArea.withTrimmedLeft (10));
+    auto       buttonArea = area.removeFromBottom (area.getHeight() / 4);
+    const auto w          = buttonArea.getWidth() / 3;
+    manualButton.setBounds (buttonArea.removeFromLeft (w).withTrimmedRight (10));
+    websiteButton.setBounds (buttonArea.removeFromRight (w).withTrimmedLeft (10));
+    homeButton.setBounds (buttonArea.reduced (10, 0));
 
     demo.setBounds (area.removeFromBottom (60).withSizeKeepingCentre (std::min (area.getWidth(), 250), 30));
 

@@ -46,6 +46,7 @@ juce_add_binary_data(
         FoleysJuceLicenseExample_data
         SOURCES
         Resources/pdf-icon.svg
+        Resources/key-icon.svg
         Resources/www-icon.svg)
 
 target_link_libraries(FoleysJuceLicenseExample

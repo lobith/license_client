@@ -21,5 +21,9 @@ endif ()
 add_subdirectory(src)
 
 # various examples
-add_subdirectory(examples/juce_plugin)
-add_subdirectory(examples/minimal)
+option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build the examples." ON)
+
+if (FOLEYS_LICENSING_BUILD_EXAMPLES)
+    add_subdirectory(examples/juce_plugin)
+    add_subdirectory(examples/minimal)
+endif ()
