@@ -100,7 +100,7 @@ bool License::canDemo() const
 
 bool License::isDemo() const
 {
-    return demoDays > 0;
+    return demoDays > 0 && !demoAvailable;
 }
 
 int License::demoDaysLeft() const

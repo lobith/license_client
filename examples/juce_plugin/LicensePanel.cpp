@@ -14,6 +14,7 @@ LicensePanel::LicensePanel()
     const juce::Colour buttonColour { 55, 69, 129 };
     const juce::Colour labelColour { 40, 41, 46 };
 
+    addAndMakeVisible (closeButton);
     addAndMakeVisible (title);
     addAndMakeVisible (enterSerial);
     addAndMakeVisible (code);
@@ -64,6 +65,13 @@ LicensePanel::LicensePanel()
     setupButton (homeButton, BinaryData::keyicon_svg, BinaryData::keyicon_svgSize, juce::URL (LicenseData::authServerUrl));
     setupButton (websiteButton, BinaryData::wwwicon_svg, BinaryData::wwwicon_svgSize, juce::URL (LicenseData::buyUrl));
 
+    setupButton (closeButton, BinaryData::closeicon_svg, BinaryData::closeicon_svgSize, {});
+    closeButton.onClick = [this]
+    {
+        if (license.isAllowed() && onCloseRequest)
+            onCloseRequest();
+    };
+
     juce::Component::SafePointer<LicensePanel> safePointer (this);
     license.onLicenseReceived = [safePointer]
     {
@@ -77,7 +85,7 @@ LicensePanel::LicensePanel()
 
     demo.onClick = [this]
     {
-        if (license.isAllowed())
+        if (license.isActivated() || license.isDemo())
         {
             if (onCloseRequest)
                 onCloseRequest();
@@ -106,10 +114,21 @@ LicensePanel::LicensePanel()
 
 void LicensePanel::update()
 {
+    closeButton.setVisible (license.isAllowed());
     demo.setEnabled (license.canDemo() || license.isAllowed());
 
     if (license.isActivated())
-        demo.setButtonText (TRANS ("Plugin activated"));
+    {
+        if (license.expires())
+        {
+            const auto date = *license.expires();
+            char       buff[20];
+            strftime (buff, 20, "%d. %m %Y", localtime (&date));
+            demo.setButtonText (TRANS ("Plugin expires ") + juce::String (buff));
+        }
+        else
+            demo.setButtonText (TRANS ("Plugin activated"));
+    }
     else if (license.isDemo())
         demo.setButtonText (TRANS ("Days to evaluate: ") + juce::String (license.demoDaysLeft()));
     else if (!license.canDemo())
@@ -122,7 +141,7 @@ void LicensePanel::update()
     {
         char dateString[64];
         auto expiryDate = *license.expires();
-        std::strftime (dateString, 64, "%d. %m %Y", std::localtime (&expiryDate));
+        std::strftime (dateString, 64, "%d. %b %Y", std::localtime (&expiryDate));
         status.setText ("Your license expired on " + juce::String (dateString), juce::dontSendNotification);
     }
     else if (license.isActivated())
@@ -142,8 +161,12 @@ void LicensePanel::paint (juce::Graphics& g)
 
 void LicensePanel::resized()
 {
+    const auto buttonHeight = 30;
+
     auto area = getLocalBounds().reduced (40);
     area      = area.withSizeKeepingCentre (std::min (area.getWidth(), 400), area.getHeight());
+
+    closeButton.setBounds (getRight() - buttonHeight, 0, buttonHeight, buttonHeight);
 
     title.setBounds (area.removeFromTop (40).reduced (80, 0));
     copyright.setBounds (area.removeFromBottom (30).withTrimmedTop (10));
@@ -154,13 +177,13 @@ void LicensePanel::resized()
     websiteButton.setBounds (buttonArea.removeFromRight (w).withTrimmedLeft (10));
     homeButton.setBounds (buttonArea.reduced (10, 0));
 
-    demo.setBounds (area.removeFromBottom (60).withSizeKeepingCentre (std::min (area.getWidth(), 250), 30));
+    demo.setBounds (area.removeFromBottom (60).withSizeKeepingCentre (std::min (area.getWidth(), 250), buttonHeight));
 
     auto third = area.getHeight() / 3;
     enterSerial.setBounds (area.removeFromTop (third));
     status.setBounds (area.removeFromBottom (third));
 
-    area.reduce (30, 0);
+    area = area.withSizeKeepingCentre (area.getWidth() - 60, buttonHeight + 20);
     submit.setBounds (area.removeFromRight (area.getWidth() / 4).reduced (10));
     code.setBounds (area.reduced (10));
 }

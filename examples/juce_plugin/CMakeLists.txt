@@ -45,6 +45,7 @@ target_compile_definitions(FoleysJuceLicenseExample
 juce_add_binary_data(
         FoleysJuceLicenseExample_data
         SOURCES
+        Resources/close-icon.svg
         Resources/pdf-icon.svg
         Resources/key-icon.svg
         Resources/www-icon.svg)
