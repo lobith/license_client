@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.24.1 FATAL_ERROR)
+#[[
+================================================================================
+foleys_license_client
 
-# ================================================================================
-# foleys_license_client
-# ================================================================================
+Copyright 2024 - Daniel Walz
+Foleys Finest Audio UG (haftungsbeschraenkt)
+Lobith Audio UG (haftungsbeschraenkt)
+********************************************************************************
 
+This code is provided under the ISC license
 
-#set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE INTERNAL "")
+This code is provided as is. The authors disclaim all warranties.
+For details refer to the LICENSE.md
+
+*******************************************************************************
+]]
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
