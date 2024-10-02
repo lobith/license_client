@@ -26,7 +26,11 @@ public:
     ~License() override;
 
 
-    static bool needServerUpdate();
+    /**
+     * @return the timestamp when the current license was created (server time)
+     */
+    static time_t getLicenseTimestamp();
+
 
     [[nodiscard]] bool shouldShowPopup();
 

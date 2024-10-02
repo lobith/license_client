@@ -17,7 +17,15 @@ namespace foleys
 
 LicenseUpdater::LicenseUpdater()
 {
-    if (License::needServerUpdate())
+    fetchIfNecessary();
+}
+
+void LicenseUpdater::fetchIfNecessary (int hours)
+{
+    auto timestamp = License::getLicenseTimestamp();
+    auto seconds   = std::difftime (std::time (nullptr), timestamp);
+
+    if (seconds > 3600 * hours)
         fetchLicenseData();
 }
 
@@ -26,7 +34,11 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
 {
     nlohmann::json request;
     request["product"]  = LicenseData::productUid;
+    request["version"]  = LicenseData::version;
     request["hardware"] = Licensing::hardwareUid;
+    request["os"]       = Licensing::os;
+    request["host"]     = Licensing::host;
+
     if (!action.empty())
         request["action"] = action;
 

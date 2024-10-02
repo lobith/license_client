@@ -36,6 +36,12 @@ public:
 
 
     /**
+     * This method checks if a license file is present and if it was fetched less than 24 hours before.
+     * Otherwise it will fetch a new license
+     */
+    void fetchIfNecessary (int hours = 24);
+
+    /**
      * Tries to get new license data from the server.
      * @param action an optional action. Allowed values: 'demo' or 'activate'. Anything else just gets the status
      */

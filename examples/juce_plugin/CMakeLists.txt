@@ -18,7 +18,7 @@ juce_add_plugin(FoleysJuceLicenseExample
         NEEDS_MIDI_OUTPUT FALSE
         IS_MIDI_EFFECT FALSE
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-        COPY_PLUGIN_AFTER_BUILD FALSE
+        COPY_PLUGIN_AFTER_BUILD TRUE
         FORMATS AU VST3 Standalone
         BUNDLE_ID com.example.foleyslicenseexample)
 

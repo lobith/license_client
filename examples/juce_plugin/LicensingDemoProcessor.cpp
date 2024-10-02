@@ -11,6 +11,8 @@ namespace foleys::Licensing
 // This block sets up some static data for all instances of this plugin.
 const std::filesystem::path localStorage = createLicensePath ("Manufacturer", LicenseData::productName);
 const std::string           hardwareUid  = juce::SystemStats::getUniqueDeviceID().toRawUTF8();
+const std::string           os           = juce::SystemStats::getOperatingSystemName().toRawUTF8();
+const std::string           host         = juce::JUCEApplicationBase::isStandaloneApp() ? "Standalone" : juce::File::getSpecialLocation(juce::File::hostApplicationPath).getFileName().toRawUTF8();
 }  // namespace foleys::Licensing
 
 

@@ -18,6 +18,7 @@ namespace foleys
 License::License()
 {
     updater->addObserver (this);
+    updater->fetchIfNecessary();
     loadLicenseBlob();
 }
 
@@ -113,15 +114,13 @@ void License::startDemo()
     updater->fetchLicenseData ("demo");
 }
 
-bool License::needServerUpdate()
+time_t License::getLicenseTimestamp()
 {
     auto response = nlohmann::json::parse (getContents(), nullptr, false);
     if (response.is_discarded())
-        return true;
+        return {};
 
-    auto timestamp = decodeDateTime (response["checked"], "%Y-%m-%dT%H:%M:%S");
-    auto seconds   = std::difftime (std::time (nullptr), timestamp);
-    return seconds > 3600 * 24;
+    return decodeDateTime (response["checked"], "%Y-%m-%dT%H:%M:%S");
 }
 
 bool License::shouldShowPopup()
