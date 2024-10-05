@@ -10,11 +10,6 @@
 namespace foleys::Licensing
 {
 
-extern const std::filesystem::path localStorage;
-extern const std::string           hardwareUid;
-extern const std::string           os;
-extern const std::string           host;
-
 enum class Error
 {
     NoError = 0,

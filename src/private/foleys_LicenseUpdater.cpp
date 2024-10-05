@@ -16,8 +16,8 @@ For details refer to the LICENSE.md
 #include "foleys_LicenseData.h"
 #include "foleys_License.h"
 #include "foleys_Crypto.h"
+#include "foleys_Checks.h"
 
-#include <private/choc_Base64.h>
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
 
@@ -30,9 +30,35 @@ LicenseUpdater::LicenseUpdater()
     fetchIfNecessary();
 }
 
+void LicenseUpdater::setupLicenseData (const std::filesystem::path& licenseFile, std::string_view hwUID, std::initializer_list<std::pair<std::string, std::string>> data)
+{
+    localStorage = licenseFile;
+    hardwareUid  = hwUID;
+    defaultData  = data;
+
+    fetchIfNecessary();
+}
+
 void LicenseUpdater::fetchIfNecessary (int hours)
 {
-    auto timestamp = License::getLicenseTimestamp();
+    if (hardwareUid.empty())
+        return;
+
+    auto contents = getContents();
+    if (contents.empty())
+    {
+        fetchLicenseData();
+        return;
+    }
+
+    auto json = nlohmann::json::parse (getContents(), nullptr, false);
+    if (json.is_discarded())
+    {
+        fetchLicenseData();
+        return;
+    }
+
+    auto timestamp = License::decodeDateTime (json[LicenseID::checked], "%Y-%m-%dT%H:%M:%S");
     auto seconds   = std::difftime (std::time (nullptr), timestamp);
 
     if (seconds > 3600 * hours)
@@ -42,35 +68,77 @@ void LicenseUpdater::fetchIfNecessary (int hours)
 
 void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer_list<std::pair<std::string, std::string>> data)
 {
-    nlohmann::json request;
-    request["product"]  = LicenseData::productUid;
-    request["version"]  = LicenseData::version;
-    request["hardware"] = Licensing::hardwareUid;
-    request["os"]       = Licensing::os;
-    request["host"]     = Licensing::host;
+    if (hardwareUid.empty())
+        return;
 
+    nlohmann::json request;
     if (!action.empty())
-        request["action"] = action;
+        request[LicenseID::action] = action;
+
+    request[LicenseID::product]  = LicenseData::productUid;
+    request[LicenseID::hardware] = hardwareUid;
+
+    for (const auto& pair: defaultData)
+        request[pair.first] = pair.second;
 
     for (const auto& pair: data)
         request[pair.first] = pair.second;
 
+#if FOLEYS_LICENSE_ENCRYPT_REQUEST
+    auto          cipher = Crypto::encrypt (request.dump());
+    cpr::Response r      = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/" + LicenseData::productUid + "/", cpr::Body (cipher));
+#else
     cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/", cpr::Body (request.dump()));
+#endif
+
+    if (r.status_code >= 400)
+    {
+        lastError       = Licensing::Error::ServerAnswerInvalid;
+        lastErrorString = "Server error (http status code: " + std::to_string (r.status_code) + ")";
+        sendUpdateSignal();
+        return;
+    }
 
     auto answer = Crypto::decrypt (r.text);
 
     if (answer.empty())
     {
         lastError       = Licensing::Error::ServerAnswerInvalid;
-        lastErrorString = "Server Error";
+        lastErrorString = "Server Error (could not decrypt)";
         sendUpdateSignal();
         return;
     }
 
-    if (License::checkHardwareUid (answer))
+    auto json = nlohmann::json::parse (answer, nullptr, false);
+    if (json.is_discarded())
     {
-        std::filesystem::create_directories (Licensing::localStorage.parent_path());
-        std::ofstream output (Licensing::localStorage);
+        lastError       = Licensing::Error::ServerAnswerInvalid;
+        lastErrorString = "Server Error (invalid json)";
+        sendUpdateSignal();
+        return;
+    }
+
+    if (Checks::getHardwareUID (json) != hardwareUid)
+    {
+        lastError       = Licensing::Error::ServerAnswerInvalid;
+        lastErrorString = "License not applicable";
+        sendUpdateSignal();
+        return;
+    }
+
+    {
+        const std::scoped_lock mutex (storageMutex);
+
+        if (localStorage.empty())
+        {
+            lastError       = Licensing::Error::CouldNotSave;
+            lastErrorString = "Could not open license file for writing";
+            sendUpdateSignal();
+            return;
+        }
+
+        std::filesystem::create_directories (localStorage.parent_path());
+        std::ofstream output (localStorage);
         if (output.is_open())
         {
             output << r.text;
@@ -81,13 +149,24 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
             lastErrorString = "Could not open license file for writing";
         }
     }
-    else
-    {
-        lastError       = Licensing::Error::ServerAnswerInvalid;
-        lastErrorString = "License not applicable";
-    }
 
     sendUpdateSignal();
+}
+
+std::string LicenseUpdater::getContents()
+{
+    if (localStorage.empty())
+        return {};
+
+    const std::scoped_lock mutex (storageMutex);
+
+    std::ifstream input (localStorage);
+    std::string   cipher (std::istreambuf_iterator<char> { input }, {});
+
+    if (cipher.empty())
+        return {};
+
+    return Crypto::decrypt (cipher);
 }
 
 void LicenseUpdater::sendUpdateSignal()

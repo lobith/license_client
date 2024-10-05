@@ -81,11 +81,15 @@ public:
      */
     void removeObserver (Observer* observer);
 
+    void setupLicenseData (const std::filesystem::path& licenseFile, std::string_view hwUID, std::initializer_list<std::pair<std::string, std::string>> data);
+
+    [[nodiscard]] std::string getContents();
+
     /**
      * Store a flag if the popup was already shown in that session
      * @return false if the popup wasn't shown yet
      */
-    bool wasPopupShown() const { return popupShown; }
+    [[nodiscard]] bool wasPopupShown() const { return popupShown; }
 
     void setPopupWasShown (bool wasShown) { popupShown = wasShown; }
 
@@ -95,10 +99,15 @@ public:
 private:
     void sendUpdateSignal();
 
-    Licensing::Error       lastError = Licensing::Error::NoError;
-    std::string            lastErrorString;
-    ObserverList<Observer> observerList;
-    bool                   popupShown = false;
+    std::mutex            storageMutex;
+    std::filesystem::path localStorage;
+    std::string           hardwareUid;
+
+    std::vector<std::pair<std::string, std::string>> defaultData;
+    Licensing::Error                                 lastError = Licensing::Error::NoError;
+    std::string                                      lastErrorString;
+    ObserverList<Observer>                           observerList;
+    bool                                             popupShown = false;
 };
 
 

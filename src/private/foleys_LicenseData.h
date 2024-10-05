@@ -15,20 +15,35 @@ For details refer to the LICENSE.md
 #ifndef FOLEYS_LICENSING_CLIENT_FOLEYS_LICENSEDATA_H
 #define FOLEYS_LICENSING_CLIENT_FOLEYS_LICENSEDATA_H
 
+namespace LicenseID
+{
+static constexpr const char* action   = "action";
+static constexpr const char* checked  = "checked";
+static constexpr const char* error    = "error";
+static constexpr const char* product  = "product";
+static constexpr const char* hardware = "hardware";
+static constexpr const char* version  = "version";
+static constexpr const char* email    = "email";
+static constexpr const char* serial   = "serial";
+static constexpr const char* host     = "host";
+static constexpr const char* os       = "os";
+static constexpr const char* computer = "computer";
+static constexpr const char* user     = "user";
+}  // namespace LicenseID
+
+
 namespace LicenseData
 {
-
-extern const char* productName;
-extern const char* copyright;
-extern const char* version;
-extern const char* authServerUrl; //< license check backend
-extern const char* buyUrl;
-extern const char* manualUrl;
-extern const char* productUid;
-extern const unsigned char* publicKey;     //< server's public
-extern const unsigned char* privateKey;    //< client's private
-
-}
+extern const char*          productName;
+extern const char*          copyright;
+extern const char*          version;
+extern const char*          authServerUrl;  //< license check backend
+extern const char*          buyUrl;
+extern const char*          manualUrl;
+extern const char*          productUid;
+extern const unsigned char* publicKey;   //< server's public
+extern const unsigned char* privateKey;  //< client's private
+}  // namespace LicenseData
 
 
 #endif  // FOLEYS_LICENSING_CLIENT_FOLEYS_LICENSEDATA_H

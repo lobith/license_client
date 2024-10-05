@@ -6,17 +6,17 @@
 #include "LicensingDemoEditor.h"
 #include "juce/foleys_JuceUtilities.h"
 
-namespace foleys::Licensing
+
+LicensingDemoProcessor::LicensingDemoProcessor()
 {
-// This block sets up some static data for all instances of this plugin.
-const std::filesystem::path localStorage = createLicensePath ("Manufacturer", LicenseData::productName);
-const std::string           hardwareUid  = juce::SystemStats::getUniqueDeviceID().toRawUTF8();
-const std::string           os           = juce::SystemStats::getOperatingSystemName().toRawUTF8();
-const std::string           host         = juce::JUCEApplicationBase::isStandaloneApp() ? "Standalone" : juce::File::getSpecialLocation(juce::File::hostApplicationPath).getFileName().toRawUTF8();
-}  // namespace foleys::Licensing
-
-
-LicensingDemoProcessor::LicensingDemoProcessor() = default;
+    license.setupLicenseData (foleys::createLicensePath ("Manufacturer", LicenseData::productName), juce::SystemStats::getUniqueDeviceID().toRawUTF8(),
+                              { { LicenseID::version, LicenseData::version },
+                                { LicenseID::hardware, juce::SystemStats::getUniqueDeviceID().toRawUTF8() },
+                                { LicenseID::os, juce::SystemStats::getOperatingSystemName().toRawUTF8() },
+                                { LicenseID::host, juce::JUCEApplicationBase::isStandaloneApp() ?
+                                                     "Standalone" :
+                                                     juce::File::getSpecialLocation (juce::File::hostApplicationPath).getFileName().toRawUTF8() } });
+}
 
 void LicensingDemoProcessor::prepareToPlay ([[maybe_unused]] double sampleRate, [[maybe_unused]] int expectedNumSamples) { }
 

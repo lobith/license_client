@@ -16,7 +16,6 @@ For details refer to the LICENSE.md
 #include "foleys_Licensing.h"
 
 #include <private/choc_Base64.h>
-#include <cpr/cpr.h>
 #include <sodium.h>
 
 namespace foleys
@@ -42,18 +41,18 @@ std::string Crypto::decrypt (std::string_view data)
 std::string Crypto::encrypt (std::string_view message)
 {
     const auto                 numBytes = message.size() + crypto_box_noncebytes();
-    std::vector<unsigned char> plain { message.begin(), message.end() };
-    std::vector<unsigned char> cipher (numBytes);
+    std::string                plain { message.begin(), message.end() };
+    std::vector<unsigned char> binary (numBytes);
 
-    randombytes_buf (cipher.data(), crypto_box_noncebytes());
-    auto cipherText = cipher.data() + crypto_box_noncebytes();
+    randombytes_buf (binary.data(), crypto_box_noncebytes());
 
-    if (crypto_box_easy (cipherText, plain.data(), message.size(), cipher.data(), LicenseData::publicKey, LicenseData::privateKey) != 0)
+    if (crypto_box_easy (binary.data() + crypto_box_noncebytes(), (const unsigned char*) plain.data(), plain.size(), binary.data(), LicenseData::publicKey, LicenseData::privateKey)
+        != 0)
     {
         return {};
     }
 
-    return choc::base64::encodeToString (cipher.data(), cipher.size());
+    return choc::base64::encodeToString (binary.data(), binary.size());
 }
 
 }  // namespace foleys

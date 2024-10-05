@@ -16,7 +16,6 @@ For details refer to the LICENSE.md
 #include "BinaryData.h"
 
 #include <foleys_License.h>
-#include <juce_audio_processors/juce_audio_processors.h>
 
 
 LicensePanel::LicensePanel()
@@ -110,12 +109,9 @@ LicensePanel::LicensePanel()
     {
         if (!code.isEmpty())
         {
-            license.activate ({ { "computer", juce::SystemStats::getComputerName().toRawUTF8() },
-                                { "user", juce::SystemStats::getFullUserName().toRawUTF8() },
-                                { "os", juce::SystemStats::getOperatingSystemName().toRawUTF8() },
-                                { "host", juce::PluginHostType().getHostDescription() },
-                                { "version", LicenseData::version },
-                                { "serial", code.getText().toRawUTF8() } });
+            license.activate ({ { LicenseID::computer, juce::SystemStats::getComputerName().toRawUTF8() },
+                                { LicenseID::user, juce::SystemStats::getFullUserName().toRawUTF8() },
+                                { LicenseID::serial, code.getText().toRawUTF8() } });
         }
     };
 

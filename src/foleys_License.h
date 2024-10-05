@@ -25,6 +25,11 @@
 #include <ctime>
 #include <filesystem>
 
+
+#ifndef FOLEYS_LICENSE_ENCRYPT_REQUEST
+    #define FOLEYS_LICENSE_ENCRYPT_REQUEST 0
+#endif
+
 namespace foleys
 {
 
@@ -37,11 +42,10 @@ public:
 
 
     /**
-     * @return the timestamp when the current license was created (server time)
+     * Check if a popup should be shown.
+     * Usually when there is no local license and in demo only once per day.
+     * @return
      */
-    static time_t getLicenseTimestamp();
-
-
     [[nodiscard]] bool shouldShowPopup();
 
     /**
@@ -54,20 +58,6 @@ public:
      * @return the error as string
      */
     [[nodiscard]] std::string getLastErrorString() const;
-
-
-    /**
-     * Check if the hardwareUid and the uid in the license file match
-     * @return true if the hardwareUid matches the machine the license was activated to.
-     */
-    [[nodiscard]] bool checkHardwareUid() const;
-
-    /**
-     * Verify if a license is applicable
-     * @param data the decrypted json string
-     * @return true if the hardware id matches
-     */
-    [[nodiscard]] static bool checkHardwareUid (std::string_view data);
 
     /**
      * Check if the machine is activated.
@@ -104,18 +94,31 @@ public:
     [[nodiscard]] std::string getLicenseeEmail() const;
 
     /**
-     * Send a login request. The server will send a login link
+     * Send a login request. The server will send a login link to the supplied email.
      */
     void login (const std::string& email);
 
     /**
      * Request the server to activate this computer
+     * @param data is a name/value set to add to the request payload.
      */
     void activate (std::initializer_list<std::pair<std::string, std::string>> data);
 
+    /**
+     * Check if the user is allowed to start a demo
+     * @return true, if a demo is available. False if the product doesn't offer one or the demo was already used.
+     */
     [[nodiscard]] bool canDemo() const;
+
+    /**
+     * @return True, if the product is currently running as demo.
+     */
     [[nodiscard]] bool isDemo() const;
-    [[nodiscard]] int  demoDaysLeft() const;
+
+    /**
+     * @return the number of days left to demo. Will be negative if the demo expired.
+     */
+    [[nodiscard]] int demoDaysLeft() const;
 
     /**
      * Send a demo request to the server
@@ -133,13 +136,21 @@ public:
      */
     std::function<void()> onLicenseReceived;
 
+    /**
+     * Set the path for the license file. This needs to be called only once
+     * @param licenseFile the filename to store the license to
+     * @param hwUID the hardware UID of the running system
+     * @param data a string pair vector of data to send with every payload
+     */
+    void setupLicenseData (const std::filesystem::path& licenseFile, std::string_view hwUID, std::initializer_list<std::pair<std::string, std::string>> data = {});
+
+
+    [[nodiscard]] static time_t decodeDateTime (const std::string& timeString, const char* formatString);
+
 private:
     std::pair<Licensing::Error, std::string> loadLicenseBlob();
 
     void licenseUpdated() override;
-
-    [[nodiscard]] static std::string getContents();
-    [[nodiscard]] static time_t      decodeDateTime (const std::string& timeString, const char* formatString);
 
     [[nodiscard]] std::pair<Licensing::Error, std::string> processData (std::string_view data);
 
