@@ -17,6 +17,7 @@ For details refer to the LICENSE.md
 
 #include <private/choc_Base64.h>
 #include <sodium.h>
+#include <vector>
 
 namespace foleys
 {
