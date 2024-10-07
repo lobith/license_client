@@ -21,6 +21,7 @@ Use the following in your cmake file:
 ```cmake
 option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build and run the tests." OFF)
 option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build the examples." OFF)
+option(FOLEYS_LICENSING_HAS_JUCE "Enable juce GUI for the license client" ON)
 
 FetchContent_Declare(license
         GIT_REPOSITORY https://github.com/ffAudio/foleys_license_client.git
@@ -28,6 +29,10 @@ FetchContent_Declare(license
         GIT_SHALLOW ON)
 FetchContent_MakeAvailable(license)
 ```
+
+The included CPR library requires
+- CMAKE_CXX_STANDARD_REQUIRED OFF
+- CMAKE_OSX_DEPLOYMENT_TARGET >= 10.15
 
 Once you created a product in the website you also create a Version there, which has it's own unique key pair to talk to the server.
 Also the version number will show up in the usage statistics.
