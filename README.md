@@ -14,3 +14,23 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CO
 THIS SOFTWARE.
 
 
+Adding
+------
+
+Use the following in your cmake file:
+```cmake
+option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build and run the tests." OFF)
+option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build the examples." OFF)
+
+FetchContent_Declare(license
+        GIT_REPOSITORY https://github.com/ffAudio/foleys_license_client.git
+        GIT_TAG main
+        GIT_SHALLOW ON)
+FetchContent_MakeAvailable(license)
+```
+
+Once you created a product in the website you also create a Version there, which has it's own unique key pair to talk to the server.
+Also the version number will show up in the usage statistics.
+
+
+
