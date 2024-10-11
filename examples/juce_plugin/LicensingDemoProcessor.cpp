@@ -15,7 +15,7 @@ LicensingDemoProcessor::LicensingDemoProcessor()
                                 { LicenseID::os, juce::SystemStats::getOperatingSystemName().toRawUTF8() },
                                 { LicenseID::host, juce::JUCEApplicationBase::isStandaloneApp() ?
                                                      "Standalone" :
-                                                     juce::File::getSpecialLocation (juce::File::hostApplicationPath).getFileName().toRawUTF8() } });
+                                                     juce::PluginHostType().getHostDescription() } });
 }
 
 void LicensingDemoProcessor::prepareToPlay ([[maybe_unused]] double sampleRate, [[maybe_unused]] int expectedNumSamples) { }

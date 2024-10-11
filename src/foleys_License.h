@@ -33,7 +33,6 @@
 namespace foleys
 {
 
-
 class License : private LicenseUpdater::Observer
 {
 public:
@@ -103,6 +102,12 @@ public:
      * @param data is a name/value set to add to the request payload.
      */
     void activate (std::initializer_list<std::pair<std::string, std::string>> data);
+
+    /**
+     * In case of a failed activation, this contains existing activations for deactivation
+     * @return a list of activated machines
+     */
+    std::vector<Licensing::Activation> getActivations();
 
     /**
      * Check if the user is allowed to start a demo

@@ -90,6 +90,11 @@ void License::activate (std::initializer_list<std::pair<std::string, std::string
     updater->fetchLicenseData ("activate", data);
 }
 
+std::vector<Licensing::Activation> License::getActivations()
+{
+    return updater->getActivations();
+}
+
 bool License::canDemo() const
 {
     return demoAvailable;

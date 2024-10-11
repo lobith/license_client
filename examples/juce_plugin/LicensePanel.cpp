@@ -158,6 +158,11 @@ void LicensePanel::update()
         status.setText ("Hit the Demo button to start your free " + juce::String (license.demoDaysLeft()) + " days trial", juce::dontSendNotification);
     else
         status.setText ("If you bought a license enter your email and hit Activate", juce::dontSendNotification);
+
+    for (const auto& a : license.getActivations())
+    {
+        DBG ("Activations: " << a.computer << " (" << a.user << ")");
+    }
 }
 
 void LicensePanel::paint (juce::Graphics& g)

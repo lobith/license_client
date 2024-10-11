@@ -86,6 +86,12 @@ public:
     [[nodiscard]] std::string getContents();
 
     /**
+     * In case of a failed activation, this contains existing activations for deactivation
+     * @return a list of activated machines
+     */
+    std::vector<Licensing::Activation> getActivations();
+
+    /**
      * Store a flag if the popup was already shown in that session
      * @return false if the popup wasn't shown yet
      */

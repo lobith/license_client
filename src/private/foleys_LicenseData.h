@@ -17,18 +17,20 @@ For details refer to the LICENSE.md
 
 namespace LicenseID
 {
-static constexpr const char* action   = "action";
-static constexpr const char* checked  = "checked";
-static constexpr const char* error    = "error";
-static constexpr const char* product  = "product";
-static constexpr const char* hardware = "hardware";
-static constexpr const char* version  = "version";
-static constexpr const char* email    = "email";
-static constexpr const char* serial   = "serial";
-static constexpr const char* host     = "host";
-static constexpr const char* os       = "os";
-static constexpr const char* computer = "computer";
-static constexpr const char* user     = "user";
+static constexpr const char* action      = "action";
+static constexpr const char* checked     = "checked";
+static constexpr const char* error       = "error";
+static constexpr const char* product     = "product";
+static constexpr const char* hardware    = "hardware";
+static constexpr const char* version     = "version";
+static constexpr const char* email       = "email";
+static constexpr const char* serial      = "serial";
+static constexpr const char* host        = "host";
+static constexpr const char* id          = "id";
+static constexpr const char* os          = "os";
+static constexpr const char* computer    = "computer";
+static constexpr const char* user        = "user";
+static constexpr const char* activations = "activations";
 }  // namespace LicenseID
 
 

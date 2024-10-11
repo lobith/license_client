@@ -85,11 +85,21 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
         request[pair.first] = pair.second;
 
 #if FOLEYS_LICENSE_ENCRYPT_REQUEST
-    auto          cipher = Crypto::encrypt (request.dump());
-    cpr::Response r      = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/" + LicenseData::productUid + "/", cpr::Body (cipher));
+    auto payload = cpr::Body (Crypto::encrypt (request.dump()));
+    auto url     = cpr::Url (LicenseData::authServerUrl) + "auth/" + LicenseData::productUid + "/";
 #else
-    cpr::Response r = cpr::Post (cpr::Url (LicenseData::authServerUrl) + "auth/", cpr::Body (request.dump()));
+    auto payload = cpr::Body (request.dump());
+    auto url     = cpr::Url (LicenseData::authServerUrl) + "auth/";
 #endif
+
+    using namespace std::chrono_literals;
+    cpr::Response r = cpr::Post (url, payload, cpr::Timeout { 10s });
+
+    if (r.error)
+    {
+        lastError       = Licensing::Error::ServerNotAvailable;
+        lastErrorString = "Server not reachable or timed out";
+    }
 
     if (r.status_code >= 400)
     {
@@ -100,6 +110,9 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
     }
 
     auto answer = Crypto::decrypt (r.text);
+
+    lastError       = Licensing::Error::NoError;
+    lastErrorString = "";
 
     if (answer.empty())
     {
@@ -150,7 +163,31 @@ void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer
         }
     }
 
+    if (json.contains (LicenseID::error))
+    {
+        lastError       = Licensing::Error::ServerError;
+        lastErrorString = json[LicenseID::error];
+    }
+
     sendUpdateSignal();
+}
+
+std::vector<Licensing::Activation> LicenseUpdater::getActivations()
+{
+    auto json = nlohmann::json::parse (getContents(), nullptr, false);
+    if (json.is_discarded())
+        return {};
+
+    if (json.contains (LicenseID::activations))
+    {
+        std::vector<Licensing::Activation> acts;
+        for (const auto& a: json[LicenseID::activations])
+            acts.push_back ({ a[LicenseID::id], a[LicenseID::computer], a[LicenseID::user] });
+
+        return acts;
+    }
+
+    return {};
 }
 
 std::string LicenseUpdater::getContents()
