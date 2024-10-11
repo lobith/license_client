@@ -29,7 +29,9 @@ target_sources(FoleysJuceLicenseExample
         LicensingDemoEditor.cpp
         LicensingDemoEditor.h
         LicensePanel.cpp
-        LicensePanel.h)
+        LicensePanel.h
+        LicenseDeactivate.cpp
+        LicenseDeactivate.h)
 
 target_sources(licensing
         INTERFACE

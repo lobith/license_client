@@ -31,6 +31,7 @@ static constexpr const char* os          = "os";
 static constexpr const char* computer    = "computer";
 static constexpr const char* user        = "user";
 static constexpr const char* activations = "activations";
+static constexpr const char* deactivate  = "deactivate";
 }  // namespace LicenseID
 
 

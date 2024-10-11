@@ -66,7 +66,7 @@ void LicenseUpdater::fetchIfNecessary (int hours)
 }
 
 
-void LicenseUpdater::fetchLicenseData (std::string_view action, std::initializer_list<std::pair<std::string, std::string>> data)
+void LicenseUpdater::fetchLicenseData (std::string_view action, const std::vector<std::pair<std::string, std::string>>& data)
 {
     if (hardwareUid.empty())
         return;

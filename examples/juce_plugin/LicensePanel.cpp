@@ -13,6 +13,7 @@ For details refer to the LICENSE.md
 
 
 #include "LicensePanel.h"
+#include "LicenseDeactivate.h"
 #include "BinaryData.h"
 
 #include <foleys_License.h>
@@ -109,9 +110,7 @@ LicensePanel::LicensePanel()
     {
         if (!code.isEmpty())
         {
-            license.activate ({ { LicenseID::computer, juce::SystemStats::getComputerName().toRawUTF8() },
-                                { LicenseID::user, juce::SystemStats::getFullUserName().toRawUTF8() },
-                                { LicenseID::serial, code.getText().toRawUTF8() } });
+            activate (code.getText(), 0);
         }
     };
 
@@ -159,11 +158,34 @@ void LicensePanel::update()
     else
         status.setText ("If you bought a license enter your email and hit Activate", juce::dontSendNotification);
 
-    for (const auto& a : license.getActivations())
+    // Show a panel to deactivate a machine
+    if (!code.isEmpty() && !license.getActivations().empty())
     {
-        DBG ("Activations: " << a.computer << " (" << a.user << ")");
+        auto panel          = std::make_unique<LicenseDeactivate>();
+        panel->onDeactivate = [this] (size_t idToDeactivate) { activate (code.getText(), idToDeactivate); };
+
+        addAndMakeVisible (panel.get());
+        deactivationPanel = std::move (panel);
+        resized();
+    }
+    else
+    {
+        deactivationPanel.reset();
     }
 }
+
+void LicensePanel::activate (const juce::String& serial, size_t deactivate)
+{
+    std::vector<std::pair<std::string, std::string>> data = { { LicenseID::computer, juce::SystemStats::getComputerName().toRawUTF8() },
+                                                              { LicenseID::user, juce::SystemStats::getFullUserName().toRawUTF8() },
+                                                              { LicenseID::serial, serial.toRawUTF8() } };
+
+    if (deactivate > 0)
+        data.emplace_back (LicenseID::deactivate, std::to_string (deactivate));
+
+    license.activate (data);
+}
+
 
 void LicensePanel::paint (juce::Graphics& g)
 {
@@ -176,6 +198,12 @@ void LicensePanel::resized()
 
     auto area = getLocalBounds().reduced (40);
     area      = area.withSizeKeepingCentre (std::min (area.getWidth(), 400), area.getHeight());
+
+    if (deactivationPanel)
+    {
+        deactivationPanel->setBounds (area);
+        deactivationPanel->toFront (false);
+    }
 
     closeButton.setBounds (getRight() - buttonHeight, 0, buttonHeight, buttonHeight);
 

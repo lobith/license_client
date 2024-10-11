@@ -55,7 +55,7 @@ public:
      * Tries to get new license data from the server.
      * @param action an optional action. Allowed values: 'demo' or 'activate'. Anything else just gets the status
      */
-    void fetchLicenseData (std::string_view action = {}, std::initializer_list<std::pair<std::string, std::string>> data = {});
+    void fetchLicenseData (std::string_view action = {}, const std::vector<std::pair<std::string, std::string>>& data = {});
 
 
     /**

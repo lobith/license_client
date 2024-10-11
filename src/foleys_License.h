@@ -101,7 +101,7 @@ public:
      * Request the server to activate this computer
      * @param data is a name/value set to add to the request payload.
      */
-    void activate (std::initializer_list<std::pair<std::string, std::string>> data);
+    void activate (const std::vector<std::pair<std::string, std::string>>& data);
 
     /**
      * In case of a failed activation, this contains existing activations for deactivation

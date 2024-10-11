@@ -85,7 +85,7 @@ void License::login (const std::string& login_email)
     updater->fetchLicenseData ("login", { { "login_email", login_email } });
 }
 
-void License::activate (std::initializer_list<std::pair<std::string, std::string>> data)
+void License::activate (const std::vector<std::pair<std::string, std::string>>& data)
 {
     updater->fetchLicenseData ("activate", data);
 }

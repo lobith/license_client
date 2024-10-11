@@ -31,6 +31,8 @@ public:
 
     void update();
 
+    void activate (const juce::String& serial, size_t deactivate);
+
 private:
     foleys::License license;
 
@@ -45,6 +47,8 @@ private:
     juce::DrawableButton homeButton { "My Licenses", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
     juce::DrawableButton websiteButton { "Buy License", juce::DrawableButton::ButtonStyle::ImageAboveTextLabel };
     juce::Label          copyright;
+
+    std::unique_ptr<juce::Component> deactivationPanel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LicensePanel)
 };
