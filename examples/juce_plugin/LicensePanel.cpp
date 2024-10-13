@@ -163,6 +163,7 @@ void LicensePanel::update()
     {
         auto panel          = std::make_unique<LicenseDeactivate>();
         panel->onDeactivate = [this] (size_t idToDeactivate) { activate (code.getText(), idToDeactivate); };
+        panel->setCloseFunction ([this] { deactivationPanel.reset(); });
 
         addAndMakeVisible (panel.get());
         deactivationPanel = std::move (panel);

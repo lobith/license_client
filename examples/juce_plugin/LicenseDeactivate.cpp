@@ -8,13 +8,32 @@
 LicenseDeactivate::LicenseDeactivate()
 {
     activations = license.getActivations();
-    setRowHeight (48);
-    setModel (this);
+    deactivations.setRowHeight (48);
+    deactivations.setModel (this);
+    deactivations.setColour (juce::ListBox::backgroundColourId, juce::Colours::black);
+    addAndMakeVisible (deactivations);
+    addAndMakeVisible (closeButton);
 }
 
 LicenseDeactivate::~LicenseDeactivate()
 {
-    setModel (nullptr);
+    deactivations.setModel (nullptr);
+}
+
+void LicenseDeactivate::resized()
+{
+    auto area = getLocalBounds().reduced (20);
+    area.removeFromTop (50);
+    closeButton.setBounds (area.removeFromBottom (24));
+    deactivations.setBounds (area.withTrimmedBottom (5));
+}
+
+void LicenseDeactivate::paint (juce::Graphics& g)
+{
+    g.fillAll (juce::Colours::black.withAlpha (0.8f));
+    g.setColour (juce::Colours::silver);
+    g.setFont (24.0f);
+    g.drawFittedText ("Select a machine to deactivate instead", getLocalBounds().reduced (20).withHeight (40), juce::Justification::centred, 2);
 }
 
 int LicenseDeactivate::getNumRows()
@@ -25,7 +44,7 @@ int LicenseDeactivate::getNumRows()
 class DeactivateItem : public juce::Component
 {
 public:
-    DeactivateItem (LicenseDeactivate& ownerToUse) : owner (ownerToUse) { addAndMakeVisible (deactivate); }
+    explicit DeactivateItem (LicenseDeactivate& ownerToUse) : owner (ownerToUse) { addAndMakeVisible (deactivate); }
 
     void setActivation (const foleys::Licensing::Activation& activationToUse)
     {
@@ -55,7 +74,7 @@ private:
     juce::TextButton              deactivate { "deactivate", "Deactivate" };
 };
 
-juce::Component* LicenseDeactivate::refreshComponentForRow (int rowNumber, bool isRowSelected, juce::Component* existingComponentToUpdate)
+juce::Component* LicenseDeactivate::refreshComponentForRow (int rowNumber, [[maybe_unused]] bool isRowSelected, juce::Component* existingComponentToUpdate)
 {
     if (auto* comp = dynamic_cast<DeactivateItem*> (existingComponentToUpdate))
     {

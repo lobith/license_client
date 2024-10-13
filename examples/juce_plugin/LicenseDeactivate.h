@@ -9,12 +9,17 @@
 #include <foleys_License.h>
 
 class LicenseDeactivate
-  : public juce::ListBox
+  : public juce::Component
   , private juce::ListBoxModel
 {
 public:
     LicenseDeactivate();
     ~LicenseDeactivate() override;
+
+    void resized() override;
+    void paint (juce::Graphics& g) override;
+
+    void setCloseFunction (std::function<void()> func) { closeButton.onClick = std::move (func); }
 
     int              getNumRows() override;
     juce::Component* refreshComponentForRow (int rowNumber, bool isRowSelected, juce::Component* existingComponentToUpdate) override;
@@ -25,10 +30,12 @@ public:
 
     foleys::License license;
 
-    std::function<void(size_t deactivate)> onDeactivate;
+    std::function<void (size_t deactivate)> onDeactivate;
 
 private:
     std::vector<foleys::Licensing::Activation> activations;
+    juce::ListBox                              deactivations;
+    juce::TextButton                           closeButton { "Close" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LicenseDeactivate)
 };
