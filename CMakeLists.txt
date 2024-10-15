@@ -32,9 +32,9 @@ endif ()
 add_subdirectory(src)
 
 # unit tests
-option(FOLEYS_LICENSING_BUILD_EXAMPLES "Build and run the tests." OFF)
+option(FOLEYS_LICENSING_BUILD_TESTS "Build and run the tests." OFF)
 
-if (FOLEYS_LICENSING_BUILD_EXAMPLES)
+if (FOLEYS_LICENSING_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif ()
