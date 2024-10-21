@@ -39,7 +39,6 @@ public:
     License();
     ~License() override;
 
-
     /**
      * Check if a popup should be shown.
      * Usually when there is no local license and in demo only once per day.
@@ -148,7 +147,6 @@ public:
      * @param data a string pair vector of data to send with every payload
      */
     void setupLicenseData (const std::filesystem::path& licenseFile, std::string_view hwUID, std::initializer_list<std::pair<std::string, std::string>> data = {});
-
 
     [[nodiscard]] static time_t decodeDateTime (const std::string& timeString, const char* formatString);
 

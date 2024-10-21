@@ -65,8 +65,9 @@ public:
      */
     struct Observer
     {
-        virtual ~Observer()           = default;
         virtual void licenseUpdated() = 0;
+
+        FOLEYS_DECLARE_SAFEPOINTER(Observer)
     };
 
     /**

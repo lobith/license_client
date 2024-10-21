@@ -19,15 +19,43 @@ For details refer to the LICENSE.md
 #include <mutex>
 #include <functional>
 
+
+/**
+ * Add this FOLEYS_DECLARE_SAFEPOINTER macro to your observer declaration. This allows to check if observers were
+ * deleted while iterating the list (dangling).
+ */
+#define FOLEYS_DECLARE_SAFEPOINTER(name)        \
+    using SafePointer = std::shared_ptr<name*>; \
+    virtual ~name()                             \
+    {                                           \
+        (*reference) = nullptr;                 \
+    }                                           \
+    SafePointer getSafePointer()                \
+    {                                           \
+        return reference;                       \
+    }                                           \
+                                                \
+private:                                        \
+    SafePointer reference { std::make_shared<name*> (this) };
+
+
 namespace foleys
 {
 
+/**
+ * A list of observers to be notified of events.
+ * @tparam ObserverType the observer interface that can be called through the list.
+ */
 template<typename ObserverType>
 class ObserverList
 {
 public:
     ObserverList() = default;
 
+    /**
+     * Add an observer to the list of observers
+     * @param observer the observer to add
+     */
     void addObserver (ObserverType* observer)
     {
         std::scoped_lock<std::mutex> guard (observerLock);
@@ -37,17 +65,44 @@ public:
         observers.push_back (observer);
     }
 
+    /**
+     * Remove all occurrences of the observer from the list of observers
+     * @param observer the observer to remove
+     */
     void removeObserver (ObserverType* observer)
     {
         std::scoped_lock<std::mutex> guard (observerLock);
         observers.erase (std::remove_if (observers.begin(), observers.end(), [observer] (const ObserverType* o) { return o == observer; }), observers.end());
     }
 
-    void call (std::function<void (ObserverType&)> func)
+    /**
+     * Call the function on every observer. It will crash, if an observer got deleted in the meantime.
+     * @param func the std::function to call
+     */
+    void callUnChecked (std::function<void (ObserverType&)> func)
     {
         std::scoped_lock<std::mutex> guard (observerLock);
         for (auto* o: observers)
             func (*o);
+    }
+
+    /**
+     * Call the function on all observers. It uses safe pointers to avoid dangling objects. It doesn't protect against concurrent destruction though.
+     * @param func The std::function to call
+     */
+    void call (std::function<void (ObserverType&)> func)
+    {
+        std::vector<typename ObserverType::SafePointer> references;
+
+        {
+            std::scoped_lock<std::mutex> guard (observerLock);
+            for (auto* o: observers)
+                references.push_back (o->getSafePointer());
+        }
+
+        for (auto& o: references)
+            if (*o)
+                func (**o);
     }
 
     ObserverList (const ObserverList&)            = delete;
